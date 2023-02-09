@@ -1,4 +1,6 @@
-# Akira Kawata
+## Profile
+- Name: Akira Kawata
+- Location: Japan
 
 ## Interests
 - Executable and Linkable Format
