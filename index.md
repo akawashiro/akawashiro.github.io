@@ -19,14 +19,17 @@ jendeley is a JSON based document organizing software.
 - [Document](https://akawashiro.github.io/jendeley/)
 - [Repository](https://github.com/akawashiro/jendeley)
 - [Introduction article (in Japanese)](https://zenn.dev/a_kawashiro/articles/a2170f967f9508)
+
 ### z3shape
 z3shape infer shapes in ONNX file using Z3 SMT solver.
 - [Repository](https://github.com/akawashiro/z3shape)
+
 ### sold
 sold is a linker software which links depending shared objects to a binary or a shared object.
 - [Repository](https://github.com/akawashiro/sold)
 - [Presentation in kernelvm (in Japanese)](./sold_kernelvm_20211120.pdf)
 - [Demo](https://www.youtube.com/watch?v=f6EMyVrq3jo)
+
 ### kearch
 This is a distributed search engine made from scratch. There are
 two type of search engine -- specialized and meta. A meta search
@@ -35,27 +38,33 @@ specialized search engine.
 - [Repository](https://github.com/kearch/kearch)
 - [Final presenation of MITOU project (in Japanese)](kearchFinalPresentation.pdf)
 - [Demo movie in the final presenation (in Japanese)](https://youtu.be/tErMAEk8wLQ)
+
 ### typed-egison
 This is a type checker for Egison programming language. I
 designed all typing rules for Egison and make type inferencer
 for Egison with Haskell. You can use it from interpreter.
 - [Repository](https://github.com/egison/typed-egison)
+
 ### wavplayer
 This is a mini music player using ATMEGA168 and SD card. I
 wrote FAT16 file system for ATMEGA168. Musics are stored in wav
 files in the root directory.
 - [Repository](https://github.com/akawashiro/wavplayer)
+
 ### cropass
 a password manager written in Go. I wrote this to use myself.
 You can generate, add and lookup password records.
 - [Repository](https://github.com/akawashiro/cropass)
+
 ### hinvader
 This is a simple invader like game wirtten in Haskell. I used
 GLUT to reder the screen.
 - [Repository](https://github.com/akawashiro/hinvader)
+
 ### ml2wasm
 This is a compiler from ML like language (MinCaml) to WebAssembly.
 - [Repository](https://github.com/akawashiro/ml2wasm)
+
 ### N-body-simulation
 Toy n-body simulator.
 - [Repository](https://github.com/akawashiro/N-body-simulation)
@@ -66,22 +75,28 @@ Toy n-body simulator.
 - [What and how does libc save information into jmp_buf used in setjmp and longjmp? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2020/12/31/184339)
 
 ## Publication
+
 ### [APLAS 2019](https://conf.researchr.org/home/aplas-2019)
 A Dependently Typed Multi-Stage Calculus
 This is a formal multistage calculus with dependent types. We design its type
 system and prove type soundness.
 - [Paper on axiv](https://arxiv.org/abs/1908.02035)
+
 ### [Egison Workshop 2018](https://connpass.com/event/102061/)
 Introduction to the type system of Egison.
 - [Handout of the type system](https://akawashiro.github.io/EgisonTypingrules.pdf)
 - [Slide](https://akawashiro.github.io/EgisonTypeSystem.pdf)
+
 ### [JSSST2018](https://jssst2018.wordpress.com/)
 Type theory for multistage programming including dependent types<br>
 - [Paper](http://jssst.or.jp/files/user/taikai/2018/PPL/ppl1-3.pdf)
+
 ### [ICFP 2020 Haskell Implementation Workshop](https://icfp20.sigplan.org/details/hiw-2020-papers/10/Sweet-Egison-a-Haskell-Library-for-Non-Deterministic-Pattern-Matching)
 Sweet Egison: a Haskell Library for Non-Deterministic Pattern Matching
+
 ### [/lib64/ld-linux-x86-64.so.2](https://docs.google.com/presentation/d/1WPxr6d_me_QU3mRWxBzs7y2iPhwV2YeAoB4EGcG9H90/edit?usp=sharing)
 Random talk on glibc dynamic linker of Linux
+
 ### [Lightning talk on AT_RANDOM](https://akawashiro.github.io/auxval_kernelvm_20220828.pdf)
 Short talk on AT_RANDOM
 
