@@ -48,6 +48,7 @@ title: Akira Kawata
 - [Document](https://akawashiro.github.io/jendeley/)
 - [Repository](https://github.com/akawashiro/jendeley)
 - [Introduction article (in Japanese)](https://zenn.dev/a_kawashiro/articles/a2170f967f9508)
+- [Introduction slides (in Japanese)](./jendeley-KMC-reikai-slide.pdf)
 
 ### z3shape
 - z3shape infer shapes in ONNX file using Z3 SMT solver.
