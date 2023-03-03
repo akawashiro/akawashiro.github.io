@@ -22,6 +22,7 @@ Linuxにおけるデバイスファイルはデバイスをファイルという
 		- [mknodのユーザ空間での処理](#mknodのユーザ空間での処理)
 		- [mknodのカーネル空間での処理](#mknodのカーネル空間での処理)
 - [参考](#参考)
+- [連絡先](#連絡先)
 
 # デバイスドライバ
 デバイスドライバとはカーネルルーチンの集合です。デバイスドライバは後で説明するVirtual File System(VFS)の各オペレーションをデバイス固有の関数に結びつけます。
@@ -457,3 +458,6 @@ index 83aeb09ca161..57037223932e 100644
 - [https://github.com/torvalds/linux/tree/v6.1](https://github.com/torvalds/linux/tree/v6.1)
 - [組み込みLinuxデバイスドライバの作り方](https://qiita.com/iwatake2222/items/1fdd2e0faaaa868a2db2)
 - [Linuxのドライバの初期化が呼ばれる流れ](https://qiita.com/rarul/items/308d4eef138b511aa233)
+
+# 連絡先
+この記事に誤りがあった場合は[Twitter](https://twitter.com/a_kawashiro)等で連絡をください。修正します。その他の連絡先は [https://akawashiro.github.io/](https://akawashiro.github.io/) にあります。
