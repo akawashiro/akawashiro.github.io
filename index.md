@@ -97,6 +97,8 @@ You can generate, add and lookup password records.
 - [LD_AUDIT and Global Offset Table (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2022/01/08/220526)
 - [What is GNU_IFUNC? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2021/11/07/100540)
 - [What and how does libc save information into jmp_buf used in setjmp and longjmp? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2020/12/31/184339)
+- [JAX から MN-Core を利用する](https://tech.preferred.jp/ja/blog/jax-on-mncore/)
+  - As the main mentor, I made the prototype of XLA to ONNX converter and support Maekawa-san during intern.
 
 ## Publication
 

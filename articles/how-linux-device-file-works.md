@@ -5,7 +5,7 @@ Linuxにおけるデバイスファイルはデバイスをファイルという
 
 この記事の内容は主に[詳解 Linuxカーネル 第3版](https://www.oreilly.co.jp/books/9784873113135/)及び[https://github.com/torvalds/linux/tree/v6.1](https://github.com/torvalds/linux/tree/v6.1)によります。
 
-# 目次 <!-- omit in toc -->
+## 目次 <!-- omit in toc -->
 - [デバイスドライバ](#デバイスドライバ)
 	- [デバイスドライバの実例](#デバイスドライバの実例)
 	- [`read_write.c` からわかること](#read_writec-からわかること)
@@ -14,8 +14,8 @@ Linuxにおけるデバイスファイルはデバイスをファイルという
 		- [insmodのカーネル空間での処理](#insmodのカーネル空間での処理)
 - [ファイル](#ファイル)
 	- [VFS(Virtual File System)](#vfsvirtual-file-system)
-	- [inode](#inode)
-	- [普通のファイルのinode](#普通のファイルのinode)
+		- [inode](#inode)
+		- [普通のファイルのinode](#普通のファイルのinode)
 		- [デバイスファイルのinode](#デバイスファイルのinode)
 - [デバイスドライバとファイルの接続](#デバイスドライバとファイルの接続)
 	- [mknod](#mknod)
@@ -24,10 +24,10 @@ Linuxにおけるデバイスファイルはデバイスをファイルという
 - [参考](#参考)
 - [連絡先](#連絡先)
 
-# デバイスドライバ
+## デバイスドライバ
 デバイスドライバとはカーネルルーチンの集合です。デバイスドライバは後で説明するVirtual File System(VFS)の各オペレーションをデバイス固有の関数に結びつけます。
 
-## デバイスドライバの実例
+### デバイスドライバの実例
 デバイスドライバを作って実際に動かしてみます。以下のような `read_write.c` と `Makefile` を用意します。この２つは[Johannes4Linux/Linux_Driver_Tutorial/03_read_write](https://github.com/Johannes4Linux/Linux_Driver_Tutorial/tree/main/03_read_write)を一部改変したものです。
 
 ```
@@ -104,7 +104,7 @@ $ cat /dev/read_write
 AAAAAA...
 ```
 
-## `read_write.c` からわかること
+### `read_write.c` からわかること
 `read_write.c`からは次のことがわかります。
 - このデバイスドライバのmajor番号は`333`である。
 - デバイスドライバは単なる関数の集合である。
@@ -112,9 +112,9 @@ AAAAAA...
 
 以上から`cat /dev/read_write` は このデバイスドライバの `driver_read` を呼び出すので `A` が無限に読み出されます。なお、major番号の`333`に意味はありません。
 
-## insmod
+### insmod
 `insmod(8)` はLinuxカーネルにカーネルモジュールを挿入するコマンドです。この章では `sudo insmod read_write.ko` がどのように`read_write.ko` をカーネルに登録するかを確認します。
-### insmodのユーザ空間での処理
+#### insmodのユーザ空間での処理
 `strace(1)`を使って`insmod(8)` が呼び出すシステムコールを確認すると`finit_module(2)`が呼ばれています。
 ```
 # strace insmod read_write.ko
@@ -130,7 +130,7 @@ close(3)                                = 0
 exit_group(0)                           = ?
 +++ exited with 0 +++
 ```
-### insmodのカーネル空間での処理
+#### insmodのカーネル空間での処理
 `finit_module(2)` はLinuxカーネル内の [kernel/module/main.c#29l6](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2916) で定義されています。
 ```
 SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
@@ -187,16 +187,17 @@ int kobj_map(struct kobj_map *domain, dev_t dev, unsigned long range,
 ```
 
 
-# ファイル
+## ファイル
+この章では「デバイスファイル」の「ファイル」について簡単に説明します。
 
-## VFS(Virtual File System)
-VFSとは標準的なUNIXファイルシステムのすべてのシステムコールを取り扱う、カーネルが提供するソフトウェアレイヤです。提供されているシステムコールとして`open(2)`、`close(2)`、`write(2)` 等があります。このレイヤがあるので、ユーザは`ext4`、`NFS`、`proc` などの全く異なるシステムを同じプログラムでで取り扱うことができます。
+### VFS(Virtual File System)
+VFSとは標準的なUNIXファイルシステムのすべてのシステムコールを取り扱う、カーネルが提供するソフトウェアレイヤです。提供されているシステムコールとして`open(2)`、`close(2)`、`write(2)` 等があります。このレイヤがあるので、ユーザは`ext4`、`NFS`、`proc` などの全く異なるシステムをインターフェイスで取り扱うことができます。
 
 例えば`cat(1)` は `cat /proc/self/maps` も `cat ./README.md`も可能ですが、前者はメモリ割付状態を、後者ははディスク上のファイルの中身を読み出しており、全く異なるシステムを同じインターフェイスで扱っています。
 
 LinuxにおいてVFSは構造体と関数ポインタを使ったオブジェクト指向で実装されていて、関数ポインタを持つ構造体がオブジェクトとして使われています。
 
-## inode
+#### inode
 inodeオブジェクトはVFSにおいて「普通のファイル」に対応するオブジェクトです。定義は [fs.h](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/include/linux/fs.h#L588-L703) にあります。inodeオブジェクト以外の他のオブジェクトとして、ファイルシステムそのものの情報を保持するスーパーブロックオブジェクト、オープンされているファイルとプロセスのやり取りの情報を保持するファイルオブジェクト、ディレクトリに関する情報を保持するdエントリオブジェクトがあります。
 
 ```
@@ -217,7 +218,7 @@ struct inode {
 };
 ```
 
-## 普通のファイルのinode
+#### 普通のファイルのinode
 `stat(1)`を使うとファイルのiノード情報を表示することができ、`struct inode` と対応した内容が表示されます。
 ```
 [@goshun](master)~/misc/linux-device-file
@@ -232,7 +233,7 @@ Change: 2023-01-28 11:19:13.748734093 +0900
  Birth: 2023-01-28 11:19:13.748734093 +0900
 ```
 
-### デバイスファイルのinode
+#### デバイスファイルのinode
 デバイスファイルのiノード情報も表示してみます。`ls -il`で表示したときに先頭に`c` がついているとキャラクタデバイス、`b` がついているとブロックデバイスです。
 ```
 [@goshun]/dev
@@ -257,11 +258,11 @@ Change: 2023-01-28 10:03:26.960000726 +0900
  Birth: -
 ```
 
-# デバイスドライバとファイルの接続
-## mknod
+## デバイスドライバとファイルの接続
+### mknod
 `mknod(1)` はブロックデバイスファイルもしくはキャラクタデバイスファイルを作るためのコマンドです。[デバイスドライバの実例](#デバイスドライバの実例) では `sudo mknod /dev/read_write c 333 1` を使ってデバイスファイル `/dev/read_write` を作成しました。[mknod(2)](https://man7.org/linux/man-pages/man2/mknod.2.html)はこれに対応するシステムコールであり、ファイルシステム上にノード(おそらくinodeのこと)を作るために使われます。
 
-### mknodのユーザ空間での処理
+#### mknodのユーザ空間での処理
 `strace(1)`を使って`mknod(2)`がどのように呼び出されているかを調べます。`0x14d`は10進で`333`なので `/dev/read_write` にメジャー番号と`333`、マイナー番号を`1`を指定してinodeを作っていることがわかる。ちなみに、`mknod`と`mnknodat`はパス名が相対パスになるかどうかという違いです。
 ```
 # strace mknod /dev/read_write c 333 1
@@ -273,7 +274,7 @@ close(2)                                = 0
 exit_group(0)                           = ?
 +++ exited with 0 +++
 ```
-### mknodのカーネル空間での処理
+#### mknodのカーネル空間での処理
 `mknodat`の本体は [do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988) にあります。ここからデバイスファイルとデバイスドライバがどのように接続されるかを追っていきます。ここではデバイスはキャラクタデバイス、ファイルシステムはext4であるとします。
 ```
 static int do_mknodat(int dfd, struct filename *name, umode_t mode,
@@ -451,7 +452,7 @@ index 83aeb09ca161..57037223932e 100644
 [  +2.141643] read_write_driver - close was called!
 ```
 
-# 参考
+## 参考
 - [詳解 Linuxカーネル 第3版](https://www.oreilly.co.jp/books/9784873113135/)
 - [init_module(2) — Linux manual page](https://man7.org/linux/man-pages/man2/init_module.2.html)
 - [linux kernelにおけるinsmodの裏側を確認](https://qiita.com/hon_no_mushi/items/9865febd245afd887d26)
@@ -459,5 +460,5 @@ index 83aeb09ca161..57037223932e 100644
 - [組み込みLinuxデバイスドライバの作り方](https://qiita.com/iwatake2222/items/1fdd2e0faaaa868a2db2)
 - [Linuxのドライバの初期化が呼ばれる流れ](https://qiita.com/rarul/items/308d4eef138b511aa233)
 
-# 連絡先
+## 連絡先
 この記事に誤りがあった場合は[Twitter](https://twitter.com/a_kawashiro)等で連絡をください。修正します。その他の連絡先は [https://akawashiro.github.io/](https://akawashiro.github.io/) にあります。
