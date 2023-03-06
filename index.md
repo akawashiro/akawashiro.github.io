@@ -93,6 +93,7 @@ You can generate, add and lookup password records.
 - [Repository](https://github.com/akawashiro/N-body-simulation)
 
 ## Articles
+- [Linuxにおけるデバイスファイルの仕組み](https://zenn.dev/a_kawashiro/articles/387fa97163dd66)
 - [Linux kernelをソースコードからビルド、インストールするシェルスクリプトを書いた](./articles/linux-build-script.md)
 - [LD_AUDIT and Global Offset Table (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2022/01/08/220526)
 - [What is GNU_IFUNC? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2021/11/07/100540)
