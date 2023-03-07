@@ -1,13 +1,13 @@
 # How Linux device file works <!-- omit in toc -->
-Linuxにおけるデバイスファイルはデバイスをファイルという概念を通して扱えるようにしたものです。デバイスファイルは通常のファイルと同様に読み書きを行うことができます。しかし実際には、その読み書きはデバイスドライバを通じてデバイスの制御に変換されます。
+Device files in Linux are interfaces for various devices in the form of files. Although we can read and write device files just the same as normal files, read and write requests are converted to requests of controlling the device by device files.
 
-この記事では、デバイスファイルへの読み書きがどのようにデバイスの制御に変換されるのかを説明します。デバイスファイルはデバイスドライバとファイルの2つのコンポーネントに依存したものであるので、最初にデバイスドライバ、次にファイルについて説明し、最後にデバイスファイルがどのようにデバイスドライバと結び付けられるかを解説します。
+This article explains how Linux kernel and kernel modules convert read and write requests to devise control requests. Because device files are dependent on device drivers and files, I start this article with a chapter on device drivers and then files. At last, I show how the Linux kernel connects device files with the device driver.
 
-この記事の内容は主に[詳解 Linuxカーネル 第3版](https://www.oreilly.co.jp/books/9784873113135/)及び[https://github.com/torvalds/linux/tree/v6.1](https://github.com/torvalds/linux/tree/v6.1)によります。
+I wrote this article mainly using [Understanding the Linux Kernel, 3rd Edition](https://www.oreilly.co.jp/books/9784873113135/) and [https://github.com/torvalds/linux/tree/v6.1](https://github.com/torvalds/linux/tree/v6.1).
 
 ## 目次 <!-- omit in toc -->
-- [デバイスドライバ](#デバイスドライバ)
-	- [デバイスドライバの実例](#デバイスドライバの実例)
+- [Device driver](#device-driver)
+	- [Example of device driver](#example-of-device-driver)
 	- [`read_write.c` からわかること](#read_writec-からわかること)
 	- [insmod](#insmod)
 		- [insmodのユーザ空間での処理](#insmodのユーザ空間での処理)
@@ -24,11 +24,12 @@ Linuxにおけるデバイスファイルはデバイスをファイルという
 - [参考](#参考)
 - [連絡先](#連絡先)
 
-## デバイスドライバ
-デバイスドライバとはカーネルルーチンの集合です。デバイスドライバは後で説明するVirtual File System(VFS)の各オペレーションをデバイス固有の関数に結びつけます。
+## Device driver
+A device driver is a collection of kernel routines. A device driver connets each operation of Virtual File System(VFS), which I explain later.
 
-### デバイスドライバの実例
-デバイスドライバを作って実際に動かしてみます。以下のような `read_write.c` と `Makefile` を用意します。この２つは[Johannes4Linux/Linux_Driver_Tutorial/03_read_write](https://github.com/Johannes4Linux/Linux_Driver_Tutorial/tree/main/03_read_write)を一部改変したものです。
+### Example of device driver
+Let's make and run a small example device driver. Prepare `read_write.c` and `Makefile` following. These two files are from [Johannes4Linux/Linux_Driver_Tutorial/03_read_write](https://github.com/Johannes4Linux/Linux_Driver_Tutorial/tree/main/03_read_write).
+
 
 ```
 / *read_write.c * /
@@ -89,13 +90,13 @@ module_exit(ModuleExit);
 obj-m += read_write.o
 
 all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+    make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+    make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 ```
 
-これをビルドしてインストールし、デバイスファイルを作成すると`A` が無限に読み出されるデバイスファイルができます。
+After buidling, installing and making the device file, you can inifete `A` from the device file. 
 ```
 $ make
 $ sudo insmod read_write.ko
@@ -150,39 +151,39 @@ static noinline int do_init_module(struct module *mod)
 更に追っていくと `insmod(8)` を行った際には [ret = do_one_initcall(mod->init);](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2455) 経由でデバイスドライバ内の`ModuleInit` が呼び出されることがわかります。
 ```
     /* Start the module */
-	if (mod->init != NULL)
-		ret = do_one_initcall(mod->init);
-	if (ret < 0) {
-		goto fail_free_freeinit;
-	}
+    if (mod->init != NULL)
+        ret = do_one_initcall(mod->init);
+    if (ret < 0) {
+        goto fail_free_freeinit;
+    }
 ```
 
 `printk` を駆使して調べると、この `mod->init` は [__apply_relocate_add](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/arch/x86/kernel/module.c#L131-L220)で設定されていました。この関数は名前から推測できるようにカーネルモジュール内の再配置を行う関数です。再配置情報と`mod->init`の関係については調べきれなかったため今後の課題とします。
 ```
 static int __apply_relocate_add(Elf64_Shdr *sechdrs,
-		   const char *strtab,
-		   unsigned int symindex,
-		   unsigned int relsec,
-		   struct module *me,
-		   void *(*write)(void *dest, const void *src, size_t len))
+           const char *strtab,
+           unsigned int symindex,
+           unsigned int relsec,
+           struct module *me,
+           void *(*write)(void *dest, const void *src, size_t len))
 ```
 
 `mod->init`経由で呼び出された`ModuleInit`は `register_chrdev` を呼び出し、最終的にカーネル内の [__register_chrdev](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L247-L302) を経由して [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66)に到達します。[kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66) は [cdev_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L28) にデバイスドライバを登録します。
 ```
 int kobj_map(struct kobj_map *domain, dev_t dev, unsigned long range,
-	     struct module *module, kobj_probe_t *probe,
-	     int (*lock)(dev_t, void *), void *data)
+         struct module *module, kobj_probe_t *probe,
+         int (*lock)(dev_t, void *), void *data)
 {
     ...
-	mutex_lock(domain->lock);
-	for (i = 0, p -= n; i < n; i++, p++, index++) {
-		struct probe **s = &domain->probes[index % 255];
-		while (*s && (*s)->range < range)
-			s = &(*s)->next;
-		p->next = *s;
-		*s = p;
-	}
-	...
+    mutex_lock(domain->lock);
+    for (i = 0, p -= n; i < n; i++, p++, index++) {
+        struct probe **s = &domain->probes[index % 255];
+        while (*s && (*s)->range < range)
+            s = &(*s)->next;
+        p->next = *s;
+        *s = p;
+    }
+    ...
 }
 ```
 
@@ -202,18 +203,18 @@ inodeオブジェクトはVFSにおいて「普通のファイル」に対応す
 
 ```
 struct inode {
-	umode_t			i_mode;
-	unsigned short		i_opflags;
-	kuid_t			i_uid;
-	kgid_t			i_gid;
-	unsigned int		i_flags;
+    umode_t         i_mode;
+    unsigned short      i_opflags;
+    kuid_t          i_uid;
+    kgid_t          i_gid;
+    unsigned int        i_flags;
   ...
   union {
-		struct pipe_inode_info	*i_pipe;
-		struct cdev		*i_cdev;
-		char			*i_link;
-		unsigned		i_dir_seq;
-	};
+        struct pipe_inode_info  *i_pipe;
+        struct cdev     *i_cdev;
+        char            *i_link;
+        unsigned        i_dir_seq;
+    };
   ...
 };
 ```
@@ -278,26 +279,26 @@ exit_group(0)                           = ?
 `mknodat`の本体は [do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988) にあります。ここからデバイスファイルとデバイスドライバがどのように接続されるかを追っていきます。ここではデバイスはキャラクタデバイス、ファイルシステムはext4であるとします。
 ```
 static int do_mknodat(int dfd, struct filename *name, umode_t mode,
-		unsigned int dev)
+        unsigned int dev)
 ```
 
 
 キャラクタデバイス、ブロックデバイスを扱う場合、[do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988) は[fs/namei.c#L3970-L3972](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3970-L3972)で `vfs_mknod` を呼び出します。
 ```
-		case S_IFCHR: case S_IFBLK:
-			error = vfs_mknod(mnt_userns, path.dentry->d_inode,
-					  dentry, mode, new_decode_dev(dev));
+        case S_IFCHR: case S_IFBLK:
+            error = vfs_mknod(mnt_userns, path.dentry->d_inode,
+                      dentry, mode, new_decode_dev(dev));
 ```
 
 `vfs_mknod`の定義は[fs/namei.c#L3874-L3891](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3874-L3891)にあります。
 ```
 /**
  * vfs_mknod - create device node or file
- * @mnt_userns:	user namespace of the mount the inode was found from
- * @dir:	inode of @dentry
- * @dentry:	pointer to dentry of the base directory
- * @mode:	mode of the new device node or file
- * @dev:	device number of device to create
+ * @mnt_userns: user namespace of the mount the inode was found from
+ * @dir:    inode of @dentry
+ * @dentry: pointer to dentry of the base directory
+ * @mode:   mode of the new device node or file
+ * @dev:    device number of device to create
  *
  * Create a device node or file.
  *
@@ -308,32 +309,32 @@ static int do_mknodat(int dfd, struct filename *name, umode_t mode,
  * raw inode simply passs init_user_ns.
  */
 int vfs_mknod(struct user_namespace *mnt_userns, struct inode *dir,
-	      struct dentry *dentry, umode_t mode, dev_t dev)
+          struct dentry *dentry, umode_t mode, dev_t dev)
 ```
 
 `vfs_mknod`はdエントリの `mknod` を呼びます。ファイルシステムごとに `mknod`の実装が異なるが今回は`ext4`のものを追ってみます。`vfs_mknod` は
 [fs/namei.c#L3915](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3915) で `mknod` を呼んでいます。
 ```
-	error = dir->i_op->mknod(mnt_userns, dir, dentry, mode, dev);
+    error = dir->i_op->mknod(mnt_userns, dir, dentry, mode, dev);
 ```
 
 `ext4` の `mknod` は[fs/ext4/namei.c#L4191](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/ext4/namei.c#L4191)で定義されています。
 ```
 const struct inode_operations ext4_dir_inode_operations = {
-	...
-	.mknod		= ext4_mknod,
-	...
+    ...
+    .mknod      = ext4_mknod,
+    ...
 };
 ```
 
 `ext4_mknod` の本体はここにあり、[fs/ext4/namei.c#L2830-L2862](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/ext4/namei.c#L2830-L2862)の `init_special_inode` がデバイスに関係していそうに見えます。
 ```
 static int ext4_mknod(struct user_namespace *mnt_userns, struct inode *dir,
-		      struct dentry *dentry, umode_t mode, dev_t rdev)
+              struct dentry *dentry, umode_t mode, dev_t rdev)
 {
-	...
-		init_special_inode(inode, inode->i_mode, rdev);
-	...
+    ...
+        init_special_inode(inode, inode->i_mode, rdev);
+    ...
 }
 ```
 
@@ -341,11 +342,11 @@ static int ext4_mknod(struct user_namespace *mnt_userns, struct inode *dir,
 ```
 void init_special_inode(struct inode *inode, umode_t mode, dev_t rdev)
 {
-	inode->i_mode = mode;
-	if (S_ISCHR(mode)) {
-		inode->i_fop = &def_chr_fops;
-		inode->i_rdev = rdev;
-	} else if (S_ISBLK(mode)) {
+    inode->i_mode = mode;
+    if (S_ISCHR(mode)) {
+        inode->i_fop = &def_chr_fops;
+        inode->i_rdev = rdev;
+    } else if (S_ISBLK(mode)) {
     ...
   }
 }
@@ -360,8 +361,8 @@ EXPORT_SYMBOL(init_special_inode);
  * depending on the special file...
  */
 const struct file_operations def_chr_fops = {
-	.open = chrdev_open,
-	.llseek = noop_llseek,
+    .open = chrdev_open,
+    .llseek = noop_llseek,
 };
 ```
 
@@ -373,7 +374,7 @@ const struct file_operations def_chr_fops = {
 static int chrdev_open(struct inode *inode, struct file *filp)
 {
 ...
-		kobj = kobj_lookup(cdev_map, inode->i_rdev, &idx);
+        kobj = kobj_lookup(cdev_map, inode->i_rdev, &idx);
 ...
 }
 ```
@@ -382,42 +383,42 @@ static int chrdev_open(struct inode *inode, struct file *filp)
 ```
 struct kobject *kobj_lookup(struct kobj_map *domain, dev_t dev, int *index)
 {
-	struct kobject *kobj;
-	struct probe *p;
-	unsigned long best = ~0UL;
+    struct kobject *kobj;
+    struct probe *p;
+    unsigned long best = ~0UL;
 
 retry:
-	mutex_lock(domain->lock);
-	for (p = domain->probes[MAJOR(dev) % 255]; p; p = p->next) {
-		struct kobject *(*probe)(dev_t, int *, void *);
-		struct module *owner;
-		void *data;
+    mutex_lock(domain->lock);
+    for (p = domain->probes[MAJOR(dev) % 255]; p; p = p->next) {
+        struct kobject *(*probe)(dev_t, int *, void *);
+        struct module *owner;
+        void *data;
 
-		if (p->dev > dev || p->dev + p->range - 1 < dev)
-			continue;
-		if (p->range - 1 >= best)
-			break;
-		if (!try_module_get(p->owner))
-			continue;
-		owner = p->owner;
-		data = p->data;
-		probe = p->get;
-		best = p->range - 1;
-		*index = dev - p->dev;
-		if (p->lock && p->lock(dev, data) < 0) {
-			module_put(owner);
-			continue;
-		}
-		mutex_unlock(domain->lock);
-		kobj = probe(dev, index, data);
-		/* Currently ->owner protects _only_ ->probe() itself. */
-		module_put(owner);
-		if (kobj)
-			return kobj;
-		goto retry;
-	}
-	mutex_unlock(domain->lock);
-	return NULL;
+        if (p->dev > dev || p->dev + p->range - 1 < dev)
+            continue;
+        if (p->range - 1 >= best)
+            break;
+        if (!try_module_get(p->owner))
+            continue;
+        owner = p->owner;
+        data = p->data;
+        probe = p->get;
+        best = p->range - 1;
+        *index = dev - p->dev;
+        if (p->lock && p->lock(dev, data) < 0) {
+            module_put(owner);
+            continue;
+        }
+        mutex_unlock(domain->lock);
+        kobj = probe(dev, index, data);
+        /* Currently ->owner protects _only_ ->probe() itself. */
+        module_put(owner);
+        if (kobj)
+            return kobj;
+        goto retry;
+    }
+    mutex_unlock(domain->lock);
+    return NULL;
 }
 
 ```
@@ -454,6 +455,7 @@ index 83aeb09ca161..57037223932e 100644
 
 ## 参考
 - [詳解 Linuxカーネル 第3版](https://www.oreilly.co.jp/books/9784873113135/)
+- [Johannes4Linux/Linux_Driver_Tutorial](https://github.com/Johannes4Linux/Linux_Driver_Tutorial)
 - [init_module(2) — Linux manual page](https://man7.org/linux/man-pages/man2/init_module.2.html)
 - [linux kernelにおけるinsmodの裏側を確認](https://qiita.com/hon_no_mushi/items/9865febd245afd887d26)
 - [https://github.com/torvalds/linux/tree/v6.1](https://github.com/torvalds/linux/tree/v6.1)
