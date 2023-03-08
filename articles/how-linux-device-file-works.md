@@ -7,22 +7,22 @@ I wrote this article mainly using [Understanding the Linux Kernel, 3rd Edition](
 
 ## 目次 <!-- omit in toc -->
 - [Device driver](#device-driver)
-	- [Example of device driver](#example-of-device-driver)
-	- [`read_write.c` からわかること](#read_writec-からわかること)
-	- [insmod](#insmod)
-		- [insmodのユーザ空間での処理](#insmodのユーザ空間での処理)
-		- [insmodのカーネル空間での処理](#insmodのカーネル空間での処理)
-- [ファイル](#ファイル)
-	- [VFS(Virtual File System)](#vfsvirtual-file-system)
-		- [inode](#inode)
-		- [普通のファイルのinode](#普通のファイルのinode)
-		- [デバイスファイルのinode](#デバイスファイルのinode)
-- [デバイスドライバとファイルの接続](#デバイスドライバとファイルの接続)
-	- [mknod](#mknod)
-		- [mknodのユーザ空間での処理](#mknodのユーザ空間での処理)
-		- [mknodのカーネル空間での処理](#mknodのカーネル空間での処理)
-- [参考](#参考)
-- [連絡先](#連絡先)
+  - [Example of device driver](#example-of-device-driver)
+  - [What we can see from `read_write.c`](#what-we-can-see-from-read_writec)
+  - [insmod](#insmod)
+    - [insmod in user space](#insmod-in-user-space)
+    - [insmod in kernel space](#insmod-in-kernel-space)
+- [File](#file)
+  - [VFS(Virtual File System)](#vfsvirtual-file-system)
+    - [inode](#inode)
+    - [inode of normal files](#inode-of-normal-files)
+    - [inode of device files](#inode-of-device-files)
+- [Connect device drivers and device files](#connect-device-drivers-and-device-files)
+  - [mknod](#mknod)
+    - [mknod in user space](#mknod-in-user-space)
+    - [mknod in kernel space](#mknod-in-kernel-space)
+- [Reference](#reference)
+- [Contacts](#contacts)
 
 ## Device driver
 A device driver is a collection of kernel routines. A device driver connets each operation of Virtual File System(VFS), which I explain later.
@@ -105,18 +105,18 @@ $ cat /dev/read_write
 AAAAAA...
 ```
 
-### `read_write.c` からわかること
-`read_write.c`からは次のことがわかります。
-- このデバイスドライバのmajor番号は`333`である。
-- デバイスドライバは単なる関数の集合である。
-- `open(2)`と`myDevice_open`、`release(2)`と`driver_close`、`read(2)`と`myDevice_read`、`write(2)`と`driver_write`が対応している。
+### What we can see from `read_write.c`
+From `read_write.c`, we can see
+- The major number of this device drivet is `333`.
+- Device drivers are just a collection of functions.
+- `open(2)`, `release(2)`, `read(2)` and `write(2)` are corresponds to `myDevice_open`, `driver_close`, `myDevice_read` and `driver_write`.
 
-以上から`cat /dev/read_write` は このデバイスドライバの `driver_read` を呼び出すので `A` が無限に読み出されます。なお、major番号の`333`に意味はありません。
+Therefore, `cat /dev/read_write` calls `driver_read` of this device driver and infinite `A`s are read out from it. For your information, this major number `333` has no meaning. You can rewrite it with any arbitary number.
 
 ### insmod
-`insmod(8)` はLinuxカーネルにカーネルモジュールを挿入するコマンドです。この章では `sudo insmod read_write.ko` がどのように`read_write.ko` をカーネルに登録するかを確認します。
-#### insmodのユーザ空間での処理
-`strace(1)`を使って`insmod(8)` が呼び出すシステムコールを確認すると`finit_module(2)`が呼ばれています。
+`insmod(8)` is a command to register a kernel module into Linux kernel module. In this section, I exaplain how `sudo insmod read_write.ko` register `read_write.ko` to the kernel.
+#### insmod in user space
+`strace(1)` shows `insmod(8)` calls `finit_module(2)` systemcall.
 ```
 # strace insmod read_write.ko
 ...
@@ -131,13 +131,13 @@ close(3)                                = 0
 exit_group(0)                           = ?
 +++ exited with 0 +++
 ```
-#### insmodのカーネル空間での処理
-`finit_module(2)` はLinuxカーネル内の [kernel/module/main.c#29l6](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2916) で定義されています。
+#### insmod in kernel space
+`finit_module(2)` is defined in Linux kernel at [kernel/module/main.c#29l6](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2916).
 ```
 SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
 ```
 
-ここから追っていくと [do_init_module関数](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2440) で初期化処理を行っていることがわかります。
+By following function calls, I realized [do_init_module](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2440) initilize the kernel module.
 ```
 /*
  * This is where the real work happens.
@@ -148,7 +148,7 @@ SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
 static noinline int do_init_module(struct module *mod)
 ```
 
-更に追っていくと `insmod(8)` を行った際には [ret = do_one_initcall(mod->init);](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2455) 経由でデバイスドライバ内の`ModuleInit` が呼び出されることがわかります。
+Following function calls more, I found `insmod(8)` calls `ModuleInit` in the device driver through [ret = do_one_initcall(mod->init);](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2455).
 ```
     /* Start the module */
     if (mod->init != NULL)
@@ -158,7 +158,7 @@ static noinline int do_init_module(struct module *mod)
     }
 ```
 
-`printk` を駆使して調べると、この `mod->init` は [__apply_relocate_add](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/arch/x86/kernel/module.c#L131-L220)で設定されていました。この関数は名前から推測できるようにカーネルモジュール内の再配置を行う関数です。再配置情報と`mod->init`の関係については調べきれなかったため今後の課題とします。
+`mod->init` is set in [__apply_relocate_add](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/arch/x86/kernel/module.c#L131-L220). This function process relocation information in the kernel module as we can infer from its function name. Although I tried to understand the relationship between relocation information in the kernel module and `mod->init` by inserting many `printk`, I failed. If anyone knows it, please tell me.
 ```
 static int __apply_relocate_add(Elf64_Shdr *sechdrs,
            const char *strtab,
@@ -168,7 +168,7 @@ static int __apply_relocate_add(Elf64_Shdr *sechdrs,
            void *(*write)(void *dest, const void *src, size_t len))
 ```
 
-`mod->init`経由で呼び出された`ModuleInit`は `register_chrdev` を呼び出し、最終的にカーネル内の [__register_chrdev](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L247-L302) を経由して [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66)に到達します。[kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66) は [cdev_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L28) にデバイスドライバを登録します。
+`ModuleInit`, called through `mod->init`, calls `register_chrdev`, [__register_chrdev](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L247-L302) and [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66). [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66) register the device driver to [cdev_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L28).
 ```
 int kobj_map(struct kobj_map *domain, dev_t dev, unsigned long range,
          struct module *module, kobj_probe_t *probe,
@@ -188,19 +188,18 @@ int kobj_map(struct kobj_map *domain, dev_t dev, unsigned long range,
 ```
 
 
-## ファイル
-この章では「デバイスファイル」の「ファイル」について簡単に説明します。
+## File
+This section explains "file" of "device file" in short.
 
 ### VFS(Virtual File System)
-VFSとは標準的なUNIXファイルシステムのすべてのシステムコールを取り扱う、カーネルが提供するソフトウェアレイヤです。提供されているシステムコールとして`open(2)`、`close(2)`、`write(2)` 等があります。このレイヤがあるので、ユーザは`ext4`、`NFS`、`proc` などの全く異なるシステムをインターフェイスで取り扱うことができます。
+VFS is a software layer in Linux kernel which handles all system call of standaer UNIX filesystem. It offers `open(2)`, `close(2)`, `write(2)` and etc. Owing to this software layer, user can use the same software for different systems such as `ext4`, `NFS`, `proc`.
 
-例えば`cat(1)` は `cat /proc/self/maps` も `cat ./README.md`も可能ですが、前者はメモリ割付状態を、後者ははディスク上のファイルの中身を読み出しており、全く異なるシステムを同じインターフェイスで扱っています。
+For example, `cat(1)` can do both `cat /proc/self/maps` and `cat ./README.md`. However, `cat /proc/self/maps` shows memory map and `cat ./README.md` shows a part of disk. It means VFS enables to handle totally different system thorugh the same interface.
 
-LinuxにおいてVFSは構造体と関数ポインタを使ったオブジェクト指向で実装されていて、関数ポインタを持つ構造体がオブジェクトとして使われています。
+VFS is implemented in objected-oriented way using struct and function pointer.
 
 #### inode
-inodeオブジェクトはVFSにおいて「普通のファイル」に対応するオブジェクトです。定義は [fs.h](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/include/linux/fs.h#L588-L703) にあります。inodeオブジェクト以外の他のオブジェクトとして、ファイルシステムそのものの情報を保持するスーパーブロックオブジェクト、オープンされているファイルとプロセスのやり取りの情報を保持するファイルオブジェクト、ディレクトリに関する情報を保持するdエントリオブジェクトがあります。
-
+inode object in VFS is an object represents "normal files". It is defined in [fs.h](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/include/linux/fs.h#L588-L703). Other objects in VFS are super block object which holds information of the filesystem itself, file objct which hold information of opend file and process, d-entry object which hold information on directories.
 ```
 struct inode {
     umode_t         i_mode;
@@ -219,8 +218,8 @@ struct inode {
 };
 ```
 
-#### 普通のファイルのinode
-`stat(1)`を使うとファイルのiノード情報を表示することができ、`struct inode` と対応した内容が表示されます。
+#### inode of normal files
+`stat(1)` shows i node information of file, which corresponds to `struct inode`.
 ```
 [@goshun](master)~/misc/linux-device-file
 > stat README.md 
@@ -234,8 +233,8 @@ Change: 2023-01-28 11:19:13.748734093 +0900
  Birth: 2023-01-28 11:19:13.748734093 +0900
 ```
 
-#### デバイスファイルのinode
-デバイスファイルのiノード情報も表示してみます。`ls -il`で表示したときに先頭に`c` がついているとキャラクタデバイス、`b` がついているとブロックデバイスです。
+#### inode of device files
+Let's check i node information of device files also. In `ls -il`, character device files starts with `c` and block device files starts with `b`.
 ```
 [@goshun]/dev
 > ls -il /dev/nvme0*                                                         
@@ -259,12 +258,11 @@ Change: 2023-01-28 10:03:26.960000726 +0900
  Birth: -
 ```
 
-## デバイスドライバとファイルの接続
+## Connect device drivers and device files
 ### mknod
-`mknod(1)` はブロックデバイスファイルもしくはキャラクタデバイスファイルを作るためのコマンドです。[デバイスドライバの実例](#デバイスドライバの実例) では `sudo mknod /dev/read_write c 333 1` を使ってデバイスファイル `/dev/read_write` を作成しました。[mknod(2)](https://man7.org/linux/man-pages/man2/mknod.2.html)はこれに対応するシステムコールであり、ファイルシステム上にノード(おそらくinodeのこと)を作るために使われます。
-
-#### mknodのユーザ空間での処理
-`strace(1)`を使って`mknod(2)`がどのように呼び出されているかを調べます。`0x14d`は10進で`333`なので `/dev/read_write` にメジャー番号と`333`、マイナー番号を`1`を指定してinodeを作っていることがわかる。ちなみに、`mknod`と`mnknodat`はパス名が相対パスになるかどうかという違いです。
+`mknod(1)` is a command to make character device files or block device files. I made `/dev/read_write` using `sudo mknod /dev/read_write c 333 1` in [Example of device driver](#example-of-device-driver). [mknod(2)](https://man7.org/linux/man-pages/man2/mknod.2.html) is a system call used in `mknod(1)` and used to make a node on filesystems.
+#### mknod in user space
+Let's check how `mknod(2)` are called using `strace(1)`. I show the output of `strace mknod /dev/read_write c 333 1` below. Because `0x14d` is `333` in decimal, we can see `mknod(2)` make an inode with `333` major number and `1` minor number. As a side note, `mknod` and `mknodeat` are almost same. The only differecne is `mknod` takes relative path although `mknodeat` takes absolute path.
 ```
 # strace mknod /dev/read_write c 333 1
 ...
@@ -275,22 +273,20 @@ close(2)                                = 0
 exit_group(0)                           = ?
 +++ exited with 0 +++
 ```
-#### mknodのカーネル空間での処理
-`mknodat`の本体は [do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988) にあります。ここからデバイスファイルとデバイスドライバがどのように接続されるかを追っていきます。ここではデバイスはキャラクタデバイス、ファイルシステムはext4であるとします。
+#### mknod in kernel space
+`mknodat` in kernel space starts from [do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988). From now, we follow all code relating to connection between device file and device driver. We suppose that the device is character device and the filesystem is ext4.
 ```
 static int do_mknodat(int dfd, struct filename *name, umode_t mode,
         unsigned int dev)
 ```
 
-
-キャラクタデバイス、ブロックデバイスを扱う場合、[do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988) は[fs/namei.c#L3970-L3972](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3970-L3972)で `vfs_mknod` を呼び出します。
+To make character device or block device, [do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988) calls `vfs_mknod` in [fs/namei.c#L3970-L3972](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3970-L3972).
 ```
         case S_IFCHR: case S_IFBLK:
             error = vfs_mknod(mnt_userns, path.dentry->d_inode,
                       dentry, mode, new_decode_dev(dev));
 ```
-
-`vfs_mknod`の定義は[fs/namei.c#L3874-L3891](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3874-L3891)にあります。
+`vfs_mknod` is defined at [fs/namei.c#L3874-L3891](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3874-L3891).
 ```
 /**
  * vfs_mknod - create device node or file
@@ -312,13 +308,12 @@ int vfs_mknod(struct user_namespace *mnt_userns, struct inode *dir,
           struct dentry *dentry, umode_t mode, dev_t dev)
 ```
 
-`vfs_mknod`はdエントリの `mknod` を呼びます。ファイルシステムごとに `mknod`の実装が異なるが今回は`ext4`のものを追ってみます。`vfs_mknod` は
-[fs/namei.c#L3915](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3915) で `mknod` を呼んでいます。
+`vfs_mknod` calls `mknod` of d entry. Although implementation of `mknod` are different depending on filesystems, we follow one of `ext4` in this article. `vfs_mknod` calls `mknod` at [fs/namei.c#L3915](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3915).
 ```
     error = dir->i_op->mknod(mnt_userns, dir, dentry, mode, dev);
 ```
 
-`ext4` の `mknod` は[fs/ext4/namei.c#L4191](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/ext4/namei.c#L4191)で定義されています。
+`mknod` of `ext4` is defined at [fs/ext4/namei.c#L4191](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/ext4/namei.c#L4191).
 ```
 const struct inode_operations ext4_dir_inode_operations = {
     ...
@@ -327,7 +322,7 @@ const struct inode_operations ext4_dir_inode_operations = {
 };
 ```
 
-`ext4_mknod` の本体はここにあり、[fs/ext4/namei.c#L2830-L2862](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/ext4/namei.c#L2830-L2862)の `init_special_inode` がデバイスに関係していそうに見えます。
+`ext4_mknod` is defined at [fs/ext4/namei.c#L2830-L2862](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/ext4/namei.c#L2830-L2862). `init_special_inode` may have something to do with device initilization.
 ```
 static int ext4_mknod(struct user_namespace *mnt_userns, struct inode *dir,
               struct dentry *dentry, umode_t mode, dev_t rdev)
@@ -338,7 +333,7 @@ static int ext4_mknod(struct user_namespace *mnt_userns, struct inode *dir,
 }
 ```
 
-キャラクタデバイスの場合は [fs/inode.c#L2291-L2309](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/inode.c#L2291-L2309) で`def_chr_fops` が設定されています。
+For character devices, `def_chr_fops` is set at [fs/inode.c#L2291-L2309](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/inode.c#L2291-L2309).
 ```
 void init_special_inode(struct inode *inode, umode_t mode, dev_t rdev)
 {
@@ -353,7 +348,7 @@ void init_special_inode(struct inode *inode, umode_t mode, dev_t rdev)
 EXPORT_SYMBOL(init_special_inode);
 ```
 
-`def_chr_fops`は[fs/char_dev.c#L447-L455](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/char_dev.c#L447-L455)で定義されています。
+`def_chr_fops` is defined at [fs/char_dev.c#L447-L455](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/char_dev.c#L447-L455).
 ```
 /*
  * Dummy default file-operations: the only thing this does
@@ -366,7 +361,7 @@ const struct file_operations def_chr_fops = {
 };
 ```
 
-`chrdev_open`が怪しいので定義を見ると [fs/char_dev.c#L370-L424](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/char_dev.c#L370-L424) の`kobj_lookup` でドライバを探していそうです。
+`chrdev_open` searches device driver in `kobj_lookup` defined at [fs/char_dev.c#L370-L424](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/char_dev.c#L370-L424).
 ```
 /*
  * Called every time a character special file is opened
@@ -379,7 +374,7 @@ static int chrdev_open(struct inode *inode, struct file *filp)
 }
 ```
 
-`insmod`のときに見た [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66)と同じファイルにたどりついたのでここで間違いなさそうです。[drivers/base/map.c#L95-L133](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/drivers/base/map.c#L95-L133)でファイルにデバイスドライバを紐付けています。
+Finally, we reached at [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66) which we have seen in `insmod`. [drivers/base/map.c#L95-L133](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/drivers/base/map.c#L95-L133) connects a device driver to a device file.
 ```
 struct kobject *kobj_lookup(struct kobj_map *domain, dev_t dev, int *index)
 {
@@ -423,7 +418,7 @@ retry:
 
 ```
 
-最後に実際にカーネルにパッチを当てて確認してみましょう。[drivers/base/map.c#L114-L115](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/drivers/base/map.c#L114-L115) にログ出力を足してカーネルをインストールして、デバイスファイルを [デバイスドライバの実例](#デバイスドライバの実例) と同様に作成します。
+At the last, let's confirm out our guess by patching Linux kernel. I add a `printk` at [drivers/base/map.c#L114-L115](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/drivers/base/map.c#L114-L115), install custom kernel and make a device driver just same as [Example of device driver](#example-of-device-driver).
 ```
 > git diff --patch "device-file-experiment~1"
 diff --git a/drivers/base/map.c b/drivers/base/map.c
@@ -441,7 +436,7 @@ index 83aeb09ca161..57037223932e 100644
                 probe = p->get;
 ```
 
-`cat /dev/read_write` したときの `dmesg -wH` の様子が以下です。`cat(2)`が`/dev/read_write` を開いたときに対応するデバイスドライバが検索されて `read_write_driver` が呼ばれていることがわかります。
+I show the result of `dmesg -wH` when `cat /dev/read_write`. We can see `read_write_driver` is called when `cat(2)` open `/dev/read_write`.
 ```
 # dmesg -wH
 ...
@@ -453,8 +448,8 @@ index 83aeb09ca161..57037223932e 100644
 [  +2.141643] read_write_driver - close was called!
 ```
 
-## 参考
-- [詳解 Linuxカーネル 第3版](https://www.oreilly.co.jp/books/9784873113135/)
+## Reference
+- [Understanding the Linux Kernel, 3rd Edition](https://www.oreilly.co.jp/books/9784873113135/)
 - [Johannes4Linux/Linux_Driver_Tutorial](https://github.com/Johannes4Linux/Linux_Driver_Tutorial)
 - [init_module(2) — Linux manual page](https://man7.org/linux/man-pages/man2/init_module.2.html)
 - [linux kernelにおけるinsmodの裏側を確認](https://qiita.com/hon_no_mushi/items/9865febd245afd887d26)
@@ -462,5 +457,5 @@ index 83aeb09ca161..57037223932e 100644
 - [組み込みLinuxデバイスドライバの作り方](https://qiita.com/iwatake2222/items/1fdd2e0faaaa868a2db2)
 - [Linuxのドライバの初期化が呼ばれる流れ](https://qiita.com/rarul/items/308d4eef138b511aa233)
 
-## 連絡先
-この記事に誤りがあった場合は[Twitter](https://twitter.com/a_kawashiro)等で連絡をください。修正します。その他の連絡先は [https://akawashiro.github.io/](https://akawashiro.github.io/) にあります。
+## Contacts
+If you find any bug in this article, please contacts me at [twitter.com/a_kawashiro](https://twitter.com/a_kawashiro). You can find other contact information in [https://akawashiro.github.io/](https://akawashiro.github.io/).
