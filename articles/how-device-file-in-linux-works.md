@@ -1,14 +1,14 @@
-# How Linux device file works <!-- omit in toc -->
-Device files in Linux are interfaces for various devices in the form of files. Although we can read and write device files just the same as normal files, read and write requests are converted to requests of controlling the device by device files.
+# How device file in Linux works <!-- omit in toc -->
+A device file in Linux is an interface for various devices in the form of files. Although we can read and write a device file just the same as a normal file, read and write requests to device control requests by device file mechanism.
 
-This article explains how Linux kernel and kernel modules convert read and write requests to devise control requests. Because device files depend on device drivers and files, I start this article with a chapter on device drivers and then files. At last, I show how the Linux kernel connects device files with the device driver.
+This article explains how Linux kernel and kernel modules convert read and write requests to device control requests. Because a device file depends on both a device driver and file system, I start this article with a chapter on a device driver and then file system. Finally, I show how the file system connects a device file with a device driver.
 
 I wrote this article mainly using [Understanding the Linux Kernel, 3rd Edition](https://www.oreilly.co.jp/books/9784873113135/) and [https://github.com/torvalds/linux/tree/v6.1](https://github.com/torvalds/linux/tree/v6.1).
 
 ## Table of contents <!-- omit in toc -->
 - [Device driver](#device-driver)
   - [Example of device driver](#example-of-device-driver)
-  - [What we can see from `read_write.c`](#what-we-can-see-from-read_writec)
+  - [What we can see in `read_write.c`](#what-we-can-see-in-read_writec)
   - [insmod](#insmod)
     - [insmod in user space](#insmod-in-user-space)
     - [insmod in kernel space](#insmod-in-kernel-space)
@@ -17,7 +17,7 @@ I wrote this article mainly using [Understanding the Linux Kernel, 3rd Edition](
     - [inode](#inode)
     - [inode of normal files](#inode-of-normal-files)
     - [inode of device files](#inode-of-device-files)
-- [Connect device drivers and device files](#connect-device-drivers-and-device-files)
+- [Connect device driver and device file](#connect-device-driver-and-device-file)
   - [mknod](#mknod)
     - [mknod in user space](#mknod-in-user-space)
     - [mknod in kernel space](#mknod-in-kernel-space)
@@ -25,10 +25,10 @@ I wrote this article mainly using [Understanding the Linux Kernel, 3rd Edition](
 - [Contacts](#contacts)
 
 ## Device driver
-A device driver is a collection of kernel routines. A device driver connects each Virtual File System(VFS) operation, which I will explain later.
+A device driver is a collection of kernel routines. Each routine corresponds to one Virtual File System (VFS) operation, which I will explain later.
 
 ### Example of device driver
-Let's make and run a small example device driver. Prepare `read_write.c` and `Makefile` following. These two files are from [Johannes4Linux/Linux_Driver_Tutorial/03_read_write](https://github.com/Johannes4Linux/Linux_Driver_Tutorial/tree/main/03_read_write).
+I show a small but complete example of device driver below. This example is composed of `read_write.c` and `Makefile`. These two files are from [Johannes4Linux/Linux_Driver_Tutorial/03_read_write](https://github.com/Johannes4Linux/Linux_Driver_Tutorial/tree/main/03_read_write).
 
 
 ```
@@ -96,7 +96,7 @@ clean:
     make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 ```
 
-After buidling, installing and making the device file, you can inifete `A` from the device file. 
+Use the below commands to build and install this example device driver example to your Linux. Then, you can read infinite `A` from the device file.
 ```
 $ make
 $ sudo insmod read_write.ko
@@ -105,18 +105,19 @@ $ cat /dev/read_write
 AAAAAA...
 ```
 
-### What we can see from `read_write.c`
-From `read_write.c`, we can see
-- The major number of this device drivet is `333`.
-- Device drivers are just a collection of functions.
+### What we can see in `read_write.c`
+We can see in ``read_write.c`:
+- The major number of this device driver is `333`.
+  - For your information, this major number `333` has no meaning. You can rewrite it with any arbitrary number.
+- A Device driver is just a collection of functions.
 - `open(2)`, `release(2)`, `read(2)` and `write(2)` are corresponds to `myDevice_open`, `driver_close`, `myDevice_read` and `driver_write`.
 
-Therefore, `cat /dev/read_write` calls `driver_read` of this device driver, and infinite `A's are read out from it. For your information, this major number `333` has no meaning. You can rewrite it with any arbitrary number.
+Because `cat /dev/read_write` calls `driver_read` of this device driver, infinite `A`s are read from it. 
 
 ### insmod
-`insmod(8)` is a command to register a kernel module into the Linux kernel. In this section, I explain how `sudo insmod read_write.ko` register `read_write.ko` to the kernel.
+`insmod(8)` is a command to load a kernel module into the Linux kernel. In this section, I explain how `sudo insmod read_write.ko` load `read_write.ko` into the kernel.
 #### insmod in user space
-`strace(1)` shows `insmod(8)` calls `finit_module(2)` systemcall.
+`strace(1)` shows `insmod(8)` calls `finit_module(2)` system call.
 ```
 # strace insmod read_write.ko
 ...
@@ -137,7 +138,7 @@ exit_group(0)                           = ?
 SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
 ```
 
-By following function calls, I realized [do_init_module](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2440) initialise the kernel module.
+`finit_module(2)` calls [do_init_module](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2440) which initialise the kernel module.
 ```
 /*
  * This is where the real work happens.
@@ -148,7 +149,7 @@ By following function calls, I realized [do_init_module](https://github.com/akaw
 static noinline int do_init_module(struct module *mod)
 ```
 
-By following function calls more, I found `insmod(8)` calls `ModuleInit` in the device driver through [ret = do_one_initcall(mod->init);](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2455).
+[do_init_module](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2440) calls `ModuleInit` in the device driver through [ret = do_one_initcall(mod->init);](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2455).
 ```
     /* Start the module */
     if (mod->init != NULL)
@@ -158,7 +159,7 @@ By following function calls more, I found `insmod(8)` calls `ModuleInit` in the 
     }
 ```
 
-`mod->init` is set in [__apply_relocate_add](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/arch/x86/kernel/module.c#L131-L220). This function process relocation information in the kernel module as we can infer from its function name. Although I tried to understand the relationship between relocation information in the kernel module and `mod->init` by inserting many `printk`, I failed. If anyone knows it, please tell me.
+[__apply_relocate_add](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/arch/x86/kernel/module.c#L131-L220) set `mod->init`. This function process relocation information in the kernel module as we can infer from its name. Although I tried to understand the relationship between relocation information in the kernel module and `mod->init` by inserting many `printk`, I failed. Please tell me if you know it.
 ```
 static int __apply_relocate_add(Elf64_Shdr *sechdrs,
            const char *strtab,
@@ -168,7 +169,7 @@ static int __apply_relocate_add(Elf64_Shdr *sechdrs,
            void *(*write)(void *dest, const void *src, size_t len))
 ```
 
-`ModuleInit`, called through `mod->init`, calls `register_chrdev`, [__register_chrdev](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L247-L302) and [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66). [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66) register the device driver to [cdev_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L28).
+`ModuleInit`, called through `mod->init`, calls [__register_chrdev](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L247-L302) and [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66). [kobj_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66) register the kernel module device to [cdev_map](https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L28). This is the end of loading process of the kernel module.
 ```
 int kobj_map(struct kobj_map *domain, dev_t dev, unsigned long range,
          struct module *module, kobj_probe_t *probe,
@@ -189,17 +190,15 @@ int kobj_map(struct kobj_map *domain, dev_t dev, unsigned long range,
 
 
 ## File
-This section explains "file" of "device file" in short.
+This section explains "file" of "device file".
 
 ### VFS(Virtual File System)
-VFS is a software layer in the Linux kernel that handles all standard UNIX filesystem system calls. It offers `open(2)`, `close(2)`, `write(2)` and etc. Owing to this software layer, users can use the same software for different systems such as `ext4`, `NFS`, `proc`.
-
-For example, `cat(1)` can do both `cat /proc/self/maps` and `cat ./README.md`. However, `cat /proc/self/maps` shows memory map, and `cat ./README.md` shows a part of the disk. It means VFS enables handling totally different systems through the same interface.
+VFS is a software layer in the Linux kernel that handles all standard UNIX filesystem system calls. It offers `open(2)`, `close(2)`, `write(2)` and etc. Owing to this software layer, users can use the same software for different file systems such as `ext4`, `NFS`, `proc`. For example, `cat(1)` can do both `cat /proc/self/maps` and `cat ./README.md`. However, `cat /proc/self/maps` shows memory map, and `cat ./README.md` shows a part of the disk.
 
 VFS is implemented in an objected-oriented way using struct and function pointers.
 
 #### inode
-inode object in VFS is an object that represents "normal files". It is defined in [fs.h](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/include/linux/fs.h#L588-L703). Other objects in VFS are superblock object which holds information of the filesystem itself, file objects which have information of opened file and process, d entry objects which have information on directories.
+inode object in VFS is an object that represents "normal files". It is defined in [include/linux/fs.h](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/include/linux/fs.h#L588-L703).
 ```
 struct inode {
     umode_t         i_mode;
@@ -217,6 +216,7 @@ struct inode {
   ...
 };
 ```
+Other objects in VFS are superblock object which holds information of the filesystem itself, file objects which have information of opened file and process, d entry objects which have information on directories.
 
 #### inode of normal files
 `stat(1)` shows the inode information of the file, which corresponds to `struct inode`.
@@ -234,7 +234,7 @@ Change: 2023-01-28 11:19:13.748734093 +0900
 ```
 
 #### inode of device files
-Let's check inode information of device files also. In `ls -il`, character device files start with `c`, and block device files starts with `b`.
+Because a device file is just a file, it has inode also. To find device files on your computer, you can use `ls -il`. Character device files start with `c`, and block device files starts with `b`.
 ```
 [@goshun]/dev
 > ls -il /dev/nvme0*                                                         
@@ -258,11 +258,13 @@ Change: 2023-01-28 10:03:26.960000726 +0900
  Birth: -
 ```
 
-## Connect device drivers and device files
+## Connect device driver and device file
 ### mknod
-`mknod(1)` is a command to make character device files or block device files. I made `/dev/read_write` using `sudo mknod /dev/read_write c 333 1` in [Example of device driver](#example-of-device-driver). [mknod(2)](https://man7.org/linux/man-pages/man2/mknod.2.html) is a system call used in `mknod(1)` and used to make a node on filesystems.
+`mknod(1)` is a command to make a special file such as a character device file or a block device file. I made `/dev/read_write` using `sudo mknod /dev/read_write c 333 1` in [Example of device driver](#example-of-device-driver). [mknod(2)](https://man7.org/linux/man-pages/man2/mknod.2.html) is a system call used in `mknod(1)` and used to make a node on filesystems.
 #### mknod in user space
-Let's check how `mknod(2)` are called using `strace(1)`. I show the output of `strace mknod /dev/read_write c 333 1` below. Because `0x14d` is `333` in decimal, we can see `mknod(2)` make an inode with `333` major number and `1` minor number. As a side note, `mknod` and `mknodeat` are almost the same. The only difference is `mknod` takes a relative path, although `mknodeat` takes an absolute path.
+Let's check how `mknod(2)` are called using `strace(1)`. I show the output of `strace mknod /dev/read_write c 333 1` below. Because `0x14d` is `333` in decimal,`mknod(2)` make an inode with `333` major number and `1` minor number.
+
+As a side note, `mknod(2)` and `mknodat(2)` are almost the same. The only difference is `mknod(2)` takes a relative path, although `mknodat(2)` takes an absolute path.
 ```
 # strace mknod /dev/read_write c 333 1
 ...
@@ -274,13 +276,13 @@ exit_group(0)                           = ?
 +++ exited with 0 +++
 ```
 #### mknod in kernel space
-`mknodat` in kernel space starts from [do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988). From now, we follow all code relating to the connection between device file and device driver. We suppose that the device is character device and the filesystem is ext4.
+`mknodat(2)` in kernel space starts from [do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988). From now, I follow all code relating to the connection between a device file and a device driver. From now, the device is a character device, and the filesystem is ext4 for simplicity.
 ```
 static int do_mknodat(int dfd, struct filename *name, umode_t mode,
         unsigned int dev)
 ```
 
-To make character device or block device, [do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988) calls `vfs_mknod` in [fs/namei.c#L3970-L3972](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3970-L3972).
+[do_mknodat](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988) calls `vfs_mknod` in [fs/namei.c#L3970-L3972](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3970-L3972) to make a character device or a block device.
 ```
         case S_IFCHR: case S_IFBLK:
             error = vfs_mknod(mnt_userns, path.dentry->d_inode,
@@ -308,7 +310,7 @@ int vfs_mknod(struct user_namespace *mnt_userns, struct inode *dir,
           struct dentry *dentry, umode_t mode, dev_t dev)
 ```
 
-`vfs_mknod` calls `mknod` of d entry. Although implementation of `mknod` are different depending on filesystems, we follow one of `ext4` in this article. `vfs_mknod` calls `mknod` at [fs/namei.c#L3915](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3915).
+`vfs_mknod` calls `mknod` of dentry. Although implementation of `mknod` are different depending on filesystems, we follow `mknod` of `ext4` in this article. `vfs_mknod` calls `mknod` at [fs/namei.c#L3915](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3915).
 ```
     error = dir->i_op->mknod(mnt_userns, dir, dentry, mode, dev);
 ```
@@ -418,7 +420,7 @@ retry:
 
 ```
 
-At last, let's confirm our guess by patching the Linux kernel. I add a `printk` at [drivers/base/map.c#L114-L115](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/drivers/base/map.c#L114-L115), install custom kernel and make a device driver just same as [Example of device driver](#example-of-device-driver).
+At last, I confirm my understanding by patching the Linux kernel. I added a `printk` at [drivers/base/map.c#L114-L115](https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/drivers/base/map.c#L114-L115), installed custom kernel and made a device driver just same as [Example of device driver](#example-of-device-driver).
 ```
 > git diff --patch "device-file-experiment~1"
 diff --git a/drivers/base/map.c b/drivers/base/map.c
@@ -436,7 +438,7 @@ index 83aeb09ca161..57037223932e 100644
                 probe = p->get;
 ```
 
-I show the `dmesg -wH` result when `cat /dev/read_write`. We can see that `read_write_driver` is called when `cat(2)` open `/dev/read_write`.
+I show the `dmesg -wH` result when `cat /dev/read_write`. You can see that `read_write_driver` is called when `cat(2)` open `/dev/read_write`.
 ```
 # dmesg -wH
 ...
