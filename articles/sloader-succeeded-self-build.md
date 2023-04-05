@@ -1,6 +1,6 @@
 # Linux のローダを置き換え可能な sloader を開発しています <!-- omit in toc -->
 ## 概要 <!-- omit in toc -->
-`ld-linux-x86-64.so.2` の挙動を完全に理解するために、`ld-linux-x86-64.so.2`を完全に置き換え可能な [https://github.com/akawashiro/sloader](https://github.com/akawashiro/sloader) を2年ほど前から開発しており、ある程度動くようになってきました。
+Linuxのスタンダードなローダ、`ld-linux-x86-64.so.2` の挙動を完全に理解するために、`ld-linux-x86-64.so.2`を完全に置き換え可能な [https://github.com/akawashiro/sloader](https://github.com/akawashiro/sloader) を2年ほど前から開発しており、ある程度動くようになってきました。
 
 ## 目次 <!-- omit in toc -->
 - [ローダとは何か](#ローダとは何か)
