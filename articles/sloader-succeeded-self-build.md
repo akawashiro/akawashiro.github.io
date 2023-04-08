@@ -15,8 +15,10 @@ Linuxのスタンダードなローダ、`ld-linux-x86-64.so.2` の挙動を完�
 
 ## ローダとは何か
 Linuxで実行可能なバイナリファイルを[execve(2)](https://man7.org/linux/man-pages/man2/execve.2.html)を使って実行するとき、その実行パスは大きく2つに分類されます。
-- Linux カーネルが直接、バイナリファイルをメモリ空間にロードする
-- バイナリが指定したローダ[^1]がバイナリファイルをメモリ空間にロードする
+- Linux カーネルが直接、バイナリファイルをメモリ空間にロードする。
+- バイナリが指定したローダ[^1]がバイナリファイルをメモリ空間にロードする。
+
+なお、詳細は Linuxカーネルの[fs/binfmt_elf.c#L1249-L1280](https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/binfmt_elf.c#L1249-L1280)付近を参照してください。
 
 `readelf -l` でバイナリファイルの `PT_INTERP` セグメントを見ると、そのバイナリファイルがどちらの方法で起動されるかを確認できます。ほとんどの場合、`Requesting program interpreter: /lib64/ld-linux-x86-64.so.2` と書いてあり、これは、バイナリファイルが指定したローダがそのファイルをメモリ空間にロードすることを意味します。
 
