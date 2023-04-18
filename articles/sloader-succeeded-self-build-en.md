@@ -35,7 +35,7 @@ You can look at the `PT_INTERP` segment of the binary file with `readelf -l` to 
 It is important to understand the exact behavior of `ld-linux-x86-64.so.2`. For example, useful hacks with environment variables such as LD_PRELOAD and LD_AUDIT are achieved by changing their behavior. If you understand the behavior of `ld-linux-x86-64.so.2`, you will be able to guess what is and is not possible with these environment variables. Also, that understanding is essential for producing software like [https://github.com/akawashiro/sold](https://github.com/akawashiro/sold).
 
 ## Problems of `ld-linux-x86-64.so.2`
-`ld-linux-x86-64.so.2` is installed on Linux as part of GNU libc, and all of its source code is [publicly] available (https://www.gnu.org/software/libc/sources.html). However, there are two problems in understanding the behavior of `ld-linux-x86-64.so.2` from the publicly available source code.
+`ld-linux-x86-64.so.2` is installed on Linux as part of GNU libc, and all of its source code is [publicly available](https://www.gnu.org/software/libc/sources.html). However, there are two problems in understanding the behavior of `ld-linux-x86-64.so.2` from the publicly available source code.
 
 The first problem is that GNU libc source code is difficult to read. It is also required to be portable to multiple architectures. For this reason, macros are used extensively throughout the source code, making it difficult to follow the program flow.
 
@@ -68,7 +68,7 @@ As mentioned earlier, `sloader` aims to replace `ld-linux-x86-64.so.2`. Naturall
 The `sloader` solves this problem by resolving the relocation information so that the `libc.so` linked to the `sloader` itself is referenced by the loaded program. Specifically, in [dyn_loader.cc#L621](https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/dyn_loader.cc#L621) If the symbol name in `R_X86_64_GLOB_DAT` or `R_X86_64_JUMP_SLOT` is from libc, the address indicated in the relocation information is not from `libc.so` but from [std::map<std::string, Elf64_Addr> function in sloader_libc_map](https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/libc_mapping.cc#L248) The pointer value is written.
 
 ### Secure TLS space for a loaderd program
-As described in [above](#Resolving symbols in libc.so), programs loaded with `sloader` use the libc linked to `sloader` itself, but there is another problem with this approach. However, there is another problem with this approach: when the loaded program accesses the Thread Local Storage (TLS) variable, it accesses the `sloader`'s own TLS area.
+As described in [above](#resolution-of-symbols-in-libcso), programs loaded with `sloader` use the libc linked to `sloader` itself, but there is another problem with this approach. However, there is another problem with this approach: when the loaded program accesses the Thread Local Storage (TLS) variable, it accesses the `sloader`'s own TLS area.
 
 This problem is worked around by reserving a dummy TLS area in the `sloader`. [tls_secure.cc#L4](https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/tls_secure.cc#L4) of 4096 bytes. dummy TLS area is defined at the beginning of the TLS area, and the loaded program refers to this area.
 ```
@@ -76,16 +76,16 @@ constexpr int TLS_SPACE_FOR_LOADEE = 4096;
 thread_local unsigned char sloader_dummy_to_secure_tls_space[TLS_SPACE_FOR_LOADEE] = {0, 0, 0, 0};
 ```
 
-This seems to be the end of the matter, but there is still a problem. The problem is that we cannot define a dummy TLS area at the beginning of a TLS area in the usual way. Currently, you can use [CMakeLists.txt#L32](https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/CMakeLists.txt#L32) to define ` tls_secure.o` in [CMakeLists.txt#L32](), but this method depends on the linker implementation.
+This seems to be the end of the matter, but there is still a problem. The problem is that we cannot define a dummy TLS area at the beginning of a TLS area in the usual way. Currently, you can use [CMakeLists.txt#L32](https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/CMakeLists.txt#L32) to define `tls_secure.o` in [CMakeLists.txt#L32](), but this method depends on the linker implementation.
 
 To make matters worse, this first-link method does not work when `libc.a` is statically linked. This makes it very embarrassing that `sloader` now requires `ld-linux-x86-64.so.2` to start.
 
 ## Current problems of sloader
-First, as mentioned [above] (#Allocating TLS area for loaded programs), it is not possible to start `sloader` without `ld-linux-x86-64.so.2`. This problem should be solved by replacing the hack that allocates the TLS dummy area with another one, or by forcing the linker script, etc. to define a dummy area at the beginning of the TLS area.
+First, as mentioned [above](#secure-tls-space-for-a-loaderd-program), it is not possible to start `sloader` without `ld-linux-x86-64.so.2`. This problem should be solved by replacing the hack that allocates the TLS dummy area with another one, or by forcing the linker script, etc. to define a dummy area at the beginning of the TLS area.
 
-Next, there is still a lot of software that cannot be started with the `sloader`, such as neovim and firefox, which when started cause Segmentation Faults. The cause of this is still unknown.
+Next, there is still a lot of software that cannot be started with the `sloader`, such as `neovim` and `firefox`, which when started cause Segmentation Faults. The cause of this is still unknown.
 
-Finally, the `sloader` relocation process is slow - it takes more than a second to launch larger programs such as firefox. However, this is simply a performance issue and should be resolved by taking a profile and improving it.
+Finally, the `sloader` relocation process is slow - it takes more than a second to launch larger programs such as `firefox`. However, this is simply a performance issue and should be resolved by taking a profile and improving it.
 
 ## Support me
 Please star [https://github.com/akawashiro/sloader](https://github.com/akawashiro/sloader). We will encourage you to do so.
