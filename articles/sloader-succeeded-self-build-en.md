@@ -61,6 +61,9 @@ $ sloader cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S . -B build \
 $ sloader make VERBOSE=1
 ```
 
+It also successfully launches several GUI applications. This image shows an example of launching `xeyes`, `xconsole`, and `xcalc` using `sloader`. `xeyes` originally displays circular eyes instead of hexagons, but due to some bug in `sloader`, they are hexagons.
+![launch GUI application using `sloader`](./xapps-launched-by-sloader.png)
+
 ## Implementation of sloader
 ### Resolution of symbols in libc.so
 As mentioned earlier, `sloader` aims to replace `ld-linux-x86-64.so.2`. Naturally, the programs you want to load with `sloader` depend on `libc.so`. On the other hand, it does not load `libc.so` with `sloader`.
