@@ -1,5 +1,5 @@
 # sloader: an alternative Linux loader <!-- omit in toc -->
-## TL;DR <!-- omit in toc -->
+## Summary <!-- omit in toc -->
 In order to fully understand the behavior of the standard Linux loader, `ld-linux-x86-64.so.2`, a complete replacement for `ld-linux-x86-64.so.2` [https://github.com/akawashiro/sloader](https://github.com/akawashiro/sloader) has been in development for about two years now and is working to some extent.
 
 ## Table of contents <!-- omit in toc -->
