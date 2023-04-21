@@ -1,4 +1,4 @@
-# sloader: an alternative Linux loader <!-- omit in toc -->
+# sloader: alternative Linux loader <!-- omit in toc -->
 ## Summary <!-- omit in toc -->
 In order to fully understand the behavior of the standard Linux loader, `ld-linux-x86-64.so.2`, I am developping a complete replacement for `ld-linux-x86-64.so.2` [https://github.com/akawashiro/sloader](https://github.com/akawashiro/sloader) for about two years and now it can launch all softwares t obuild sloader itself and some GUI applications.
 
@@ -35,11 +35,11 @@ You can look at the `PT_INTERP` segment of the binary file with `readelf -l` to 
 It is important to understand the exact behavior of `ld-linux-x86-64.so.2`. For example, useful hacks with environment variables such as LD_PRELOAD and LD_AUDIT are achieved by changing their behavior. If you understand the behavior of `ld-linux-x86-64.so.2`, you will be able to guess what is and is not possible with these environment variables. Also, that understanding is essential for producing hacky software like [https://github.com/akawashiro/sold](https://github.com/akawashiro/sold), which links dynamically linked libraries statically.
 
 ## Problems of `ld-linux-x86-64.so.2`
-`ld-linux-x86-64.so.2` is installed on Linux as part of GNU libc, and all of its source code is [publicly available](https://www.gnu.org/software/libc/sources.html). However, there are two problems in understanding the behavior of `ld-linux-x86-64.so.2` from the publicly available source code.
+`ld-linux-x86-64.so.2` is installed on Linux as part of glibc, and all of its source code is [publicly available](https://www.gnu.org/software/libc/sources.html). However, there are two problems in understanding the behavior of `ld-linux-x86-64.so.2` from the publicly available source code.
 
-The first problem is that GNU libc source code is difficult to read. GNU libc is also required to be portable to multiple architectures such as x86-64, ARM, SPARC, etc. For this reason, macros are used extensively throughout the source code, making it difficult to follow the program flow.
+The first problem is that glibc source code is difficult to read. glibc is also required to be portable to multiple architectures such as x86-64, ARM, SPARC, etc. For this reason, macros are used extensively throughout the source code, making it difficult to follow the program flow.
 
-The second problem is that `libc.so` is initialized and loaded with the program at the same time, and it is impossible to understand only the loading part in isolation. `libc.so` is the so-called standard C library, which is almost certainly loaded at the same time when the binary files are loaded by `ld-linux-x86-64.so.2`. `libc.so` and `ld-linux-x86-64.so.2` reside in the same package, and the division of labor between the two components is not explicitly documented. This makes it very difficult to isolate and understand just `libc.so` or just loading and carving it out into separate software.
+The second problem is `ld-linux-x86-64.so.2` initialize `libc.so` simultaneously when it loads a program. Because of this, We cannot understand the loading process separating from the initialization of `libc.so`. `ld-linux-x86-64.so.2` and `libc.so` are included in the same source code tree, and their boundary is very ambiguous.
 
 ## sloader: an alternative Linux loader
 I have decided to develop a new loader that can replace `ld-linux-x86-64.so.2` to solve the problem described above and understand the behavior of `ld-linux-x86-64.so.2`. In other words, I am trying to load all programs (`systemd`, `cat`, `find`, `firefox`, etc.) that run on Linux by my new loader.
@@ -68,7 +68,7 @@ $ sloader make VERBOSE=1
 ### Resolution of symbols in libc.so
 As mentioned earlier, `sloader` aims to replace `ld-linux-x86-64.so.2`. Naturally, the programs I want to load with `sloader` depend on `libc.so`. On the other hand, it does not load `libc.so`.
 
-The `sloader` solves this problem by resolving the relocation information so that the `libc.so` linked to the `sloader` itself is referenced by the loaded program. Specifically, in [dyn_loader.cc#L621](https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/dyn_loader.cc#L621) If the symbol name in `R_X86_64_GLOB_DAT` or `R_X86_64_JUMP_SLOT` is from libc, the address indicated in the relocation information is not from `libc.so` but from [std::map<std::string, Elf64_Addr> function in sloader_libc_map](https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/libc_mapping.cc#L248) The pointer value is written.
+`sloader` resolves this problem by using `libc.so` linked to `sloader` itself. When `sloader` finds a relocation information pointing to symbols in `libc.so`, `sloader` resolves it in an unusual way. Specifically, in [dyn_loader.cc#L621](https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/dyn_loader.cc#L621), when the symbol name in `R_X86_64_GLOB_DAT` or `R_X86_64_JUMP_SLOT` is from libc, `sloader` resolves the relocation to [std::map<std::string, Elf64_Addr> function in sloader_libc_map](https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/libc_mapping.cc#L248).
 
 ### Secure TLS space for a loaderd program
 As described in [above](#resolution-of-symbols-in-libcso), programs loaded with `sloader` use the `libc.so` linked to `sloader` itself, but there is another problem with this approach: when the loaded program accesses the Thread Local Storage (TLS) variable, it accesses the `sloader`'s own TLS area.
