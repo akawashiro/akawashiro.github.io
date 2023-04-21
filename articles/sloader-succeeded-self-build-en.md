@@ -35,9 +35,9 @@ You can look at the `PT_INTERP` segment of the binary file with `readelf -l` to 
 It is important to understand the exact behavior of `ld-linux-x86-64.so.2`. For example, useful hacks with environment variables such as LD_PRELOAD and LD_AUDIT are achieved by changing their behavior. If you understand the behavior of `ld-linux-x86-64.so.2`, you will be able to guess what is and is not possible with these environment variables. Also, that understanding is essential for producing hacky software like [https://github.com/akawashiro/sold](https://github.com/akawashiro/sold), which links dynamically linked libraries statically.
 
 ## Problems of `ld-linux-x86-64.so.2`
-`ld-linux-x86-64.so.2` is installed on Linux as part of GNU libc, and all of its source code is [publicly available](https://www.gnu.org/software/libc/sources.html). However, there are two problems in understanding the behavior of `ld-linux-x86-64.so.2` from the publicly available source code.
+`ld-linux-x86-64.so.2` is installed on Linux as part of glibc, and all of its source code is [publicly available](https://www.gnu.org/software/libc/sources.html). However, there are two problems in understanding the behavior of `ld-linux-x86-64.so.2` from the publicly available source code.
 
-The first problem is that GNU libc source code is difficult to read. GNU libc is also required to be portable to multiple architectures such as x86-64, ARM, SPARC, etc. For this reason, macros are used extensively throughout the source code, making it difficult to follow the program flow.
+The first problem is that glibc source code is difficult to read. glibc is also required to be portable to multiple architectures such as x86-64, ARM, SPARC, etc. For this reason, macros are used extensively throughout the source code, making it difficult to follow the program flow.
 
 The second problem is `ld-linux-x86-64.so.2` initialize `libc.so` simultaneously when it loads a program. Because of this, We cannot understand the loading process separating from the initialization of `libc.so`. `ld-linux-x86-64.so.2` and `libc.so` are included in the same source code tree, and their boundary is very ambiguous.
 
