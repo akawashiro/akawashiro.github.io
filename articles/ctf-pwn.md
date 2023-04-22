@@ -29,6 +29,8 @@
 問題はまだ公開されていない。DBLで左に1bitずらせるのも気づけなかったし、書き込み可能な領域が足りないときに他のヒープとつなげてシェルコードを完成させるのも気づかなかった。
 - [RICERCA CTF 2023](https://2023.ctf.ricsec.co.jp/)
 - [入力からシェルコードを入れているwriteup](https://zenn.dev/ri5255/articles/4d5bac95f7238d)
+- [jmp short/jmp near](https://www.felixcloutier.com/x86/jmp.html)
+    - 近くにjmpできるやつ
 
 やりかけ
 ```
