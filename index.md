@@ -8,6 +8,7 @@ title: Akira Kawata
 - [Links](#links)
 - [Software and Hardware](#software-and-hardware)
   - [ros3fs](#ros3fs)
+  - [sloader](#sloader)
   - [jendeley](#jendeley)
   - [z3shape](#z3shape)
   - [sold](#sold)
@@ -47,6 +48,12 @@ title: Akira Kawata
 ### ros3fs
 - ros3fs, Read Only S3 File System, is a Linux FUSE adapter for AWS S3 and S3 compatible object storage such as Apache Ozone. ros3fs focuses on speed, only speed.
 - [Repository](https://github.com/akawashiro/ros3fs)
+
+### sloader
+- `sloader` is an ELF loader that aims to replace `ld-linux.so.2` of `glibc`.
+- [Introduction article (in Japanese)](https://zenn.dev/a_kawashiro/articles/506a224d206418)
+- [Introduction article (in English)](https://akawashiro.github.io/articles/sloader-succeeded-self-build-en)
+- [Repository](https://github.com/akawashiro/sloader)
 
 ### jendeley
 - jendeley is a JSON based document organizing software.
