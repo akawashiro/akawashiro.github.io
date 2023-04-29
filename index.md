@@ -6,6 +6,17 @@ title: Akira Kawata
 ## Table of Contents <!-- omit in toc -->
 - [Interests](#interests)
 - [Links](#links)
+- [Articles](#articles)
+- [Publication](#publication)
+  - [APLAS 2019](#aplas-2019)
+  - [Egison Workshop 2018](#egison-workshop-2018)
+  - [JSSST2018](#jssst2018)
+  - [ICFP 2020 Haskell Implementation Workshop](#icfp-2020-haskell-implementation-workshop)
+  - [Private talk](#private-talk)
+  - [Kernel/VM探検隊online part5 ](#kernelvm探検隊online-part5-)
+- [Activities](#activities)
+- [Work Experience](#work-experience)
+- [GPG Public Key](#gpg-public-key)
 - [Software and Hardware](#software-and-hardware)
   - [ros3fs](#ros3fs)
   - [sloader](#sloader)
@@ -19,22 +30,11 @@ title: Akira Kawata
   - [hinvader](#hinvader)
   - [ml2wasm](#ml2wasm)
   - [N-body-simulation](#n-body-simulation)
-- [Articles](#articles)
-- [Publication](#publication)
-  - [APLAS 2019](#aplas-2019)
-  - [Egison Workshop 2018](#egison-workshop-2018)
-  - [JSSST2018](#jssst2018)
-  - [ICFP 2020 Haskell Implementation Workshop](#icfp-2020-haskell-implementation-workshop)
-  - [Private talk](#private-talk)
-  - [Kernel/VM探検隊online part5 ](#kernelvm探検隊online-part5-)
-- [Activities](#activities)
-- [Work Experience](#work-experience)
-- [GPG Public Key](#gpg-public-key)
 
 ## Interests
-- Executable and Linkable Format
-- Type theory of programming languages
-- Implementation of programming languages
+- Executable and Linkable Format of Linux
+- Linux kernel inside
+- Program analysis
 
 ## Links
 - [GitHub](https://github.com/akawashiro)
@@ -43,6 +43,56 @@ title: Akira Kawata
 - [Mastodon](https://mstdn.jp/@a_kawashiro)
 - [LinkedIn](https://www.linkedin.com/in/akirakawata/)
 - [keybase](https://keybase.io/a_kawashiro)
+
+## Articles
+- [Linuxのローダを自作する](https://zenn.dev/a_kawashiro/articles/506a224d206418)
+- [Linuxにおけるデバイスファイルの仕組み](https://zenn.dev/a_kawashiro/articles/387fa97163dd66)
+- [jendeley - JSONベースの文書管理ソフトウェア](https://zenn.dev/articles/a2170f967f9508)
+- [Linux kernelをソースコードからビルド、インストールするシェルスクリプトを書いた](./articles/linux-build-script.md)
+- [LD_AUDIT and Global Offset Table (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2022/01/08/220526)
+- [What is GNU_IFUNC? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2021/11/07/100540)
+- [What and how does libc save information into jmp_buf used in setjmp and longjmp? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2020/12/31/184339)
+- [JAX から MN-Core を利用する](https://tech.preferred.jp/ja/blog/jax-on-mncore/)
+  - As the main mentor, I made the prototype of XLA to ONNX converter and support Maekawa-san during intern.
+
+## Publication
+
+### [APLAS 2019](https://conf.researchr.org/home/aplas-2019)
+- A Dependently Typed Multi-Stage Calculus -- This is a formal multistage calculus with dependent types. We design its type system and prove type soundness.
+- [Paper on axiv](https://arxiv.org/abs/1908.02035)
+
+### [Egison Workshop 2018](https://connpass.com/event/102061/)
+- Introduction to the type system of Egison.
+- [Handout of the type system](https://akawashiro.github.io/EgisonTypingrules.pdf)
+- [Slide](https://akawashiro.github.io/EgisonTypeSystem.pdf)
+
+### [JSSST2018](https://jssst2018.wordpress.com/)
+- Type theory for multistage programming including dependent types
+- [Paper](http://jssst.or.jp/files/user/taikai/2018/PPL/ppl1-3.pdf)
+
+### [ICFP 2020 Haskell Implementation Workshop](https://icfp20.sigplan.org/details/hiw-2020-papers/10/Sweet-Egison-a-Haskell-Library-for-Non-Deterministic-Pattern-Matching)
+- Sweet Egison: a Haskell Library for Non-Deterministic Pattern Matching
+
+### Private talk
+- [Slide: /lib64/ld-linux-x86-64.so.2](https://docs.google.com/presentation/d/1WPxr6d_me_QU3mRWxBzs7y2iPhwV2YeAoB4EGcG9H90/edit?usp=sharing)
+- Random talk on glibc dynamic linker of Linux
+
+### [Kernel/VM探検隊online part5 ](https://kernelvm.connpass.com/event/256248/)
+- Short talk on AT_RANDOM
+- [Slide: 補助ベクトルとプロセスのロード](https://akawashiro.github.io/auxval_kernelvm_20220828.pdf)
+
+## Activities
+- [The 11th Japan Olympiad in Informatics, Silver medal](https://www.ioi-jp.org/joi/2011/2012-medalists.html)
+- [IPA The MITOH Project 2018](https://www.ipa.go.jp/jinzai/mitou/2018/gaiyou_s-2)
+    - Distibuted Search Engine Using Focus Crawling and Federated Search
+
+## Work Experience
+- Software engineer, Japan, Preferred Networks, April 2020
+- Internship, Japan, Rakuten Institute of Technology, March 2018 - April 2018
+
+## GPG Public Key
+- Fingure print: 3FB4269CA58D57F0326C1F7488737135568C1AC5
+- [Public key file](9804D984406FEE5605D5CB82A8DEC03E3DF3BDAD.html)
 
 ## Software and Hardware
 ### ros3fs
@@ -103,51 +153,3 @@ You can generate, add and lookup password records.
 ### N-body-simulation
 - N-body-simulation is a toy n-body simulator.
 - [Repository](https://github.com/akawashiro/N-body-simulation)
-
-## Articles
-- [Linuxにおけるデバイスファイルの仕組み](https://zenn.dev/a_kawashiro/articles/387fa97163dd66)
-- [Linux kernelをソースコードからビルド、インストールするシェルスクリプトを書いた](./articles/linux-build-script.md)
-- [LD_AUDIT and Global Offset Table (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2022/01/08/220526)
-- [What is GNU_IFUNC? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2021/11/07/100540)
-- [What and how does libc save information into jmp_buf used in setjmp and longjmp? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2020/12/31/184339)
-- [JAX から MN-Core を利用する](https://tech.preferred.jp/ja/blog/jax-on-mncore/)
-  - As the main mentor, I made the prototype of XLA to ONNX converter and support Maekawa-san during intern.
-
-## Publication
-
-### [APLAS 2019](https://conf.researchr.org/home/aplas-2019)
-- A Dependently Typed Multi-Stage Calculus -- This is a formal multistage calculus with dependent types. We design its type system and prove type soundness.
-- [Paper on axiv](https://arxiv.org/abs/1908.02035)
-
-### [Egison Workshop 2018](https://connpass.com/event/102061/)
-- Introduction to the type system of Egison.
-- [Handout of the type system](https://akawashiro.github.io/EgisonTypingrules.pdf)
-- [Slide](https://akawashiro.github.io/EgisonTypeSystem.pdf)
-
-### [JSSST2018](https://jssst2018.wordpress.com/)
-- Type theory for multistage programming including dependent types
-- [Paper](http://jssst.or.jp/files/user/taikai/2018/PPL/ppl1-3.pdf)
-
-### [ICFP 2020 Haskell Implementation Workshop](https://icfp20.sigplan.org/details/hiw-2020-papers/10/Sweet-Egison-a-Haskell-Library-for-Non-Deterministic-Pattern-Matching)
-- Sweet Egison: a Haskell Library for Non-Deterministic Pattern Matching
-
-### Private talk
-- [Slide: /lib64/ld-linux-x86-64.so.2](https://docs.google.com/presentation/d/1WPxr6d_me_QU3mRWxBzs7y2iPhwV2YeAoB4EGcG9H90/edit?usp=sharing)
-- Random talk on glibc dynamic linker of Linux
-
-### [Kernel/VM探検隊online part5 ](https://kernelvm.connpass.com/event/256248/)
-- Short talk on AT_RANDOM
-- [Slide: 補助ベクトルとプロセスのロード](https://akawashiro.github.io/auxval_kernelvm_20220828.pdf)
-
-## Activities
-- [The 11th Japan Olympiad in Informatics, Silver medal](https://www.ioi-jp.org/joi/2011/2012-medalists.html)
-- [IPA The MITOH Project 2018](https://www.ipa.go.jp/jinzai/mitou/2018/gaiyou_s-2)
-    - Distibuted Search Engine Using Focus Crawling and Federated Search
-        
-## Work Experience
-- Software engineer, Japan, Preferred Networks, April 2020
-- Internship, Japan, Rakuten Institute of Technology, March 2018 - April 2018
-
-## GPG Public Key
-- Fingure print: 3FB4269CA58D57F0326C1F7488737135568C1AC5
-- [Public key file](9804D984406FEE5605D5CB82A8DEC03E3DF3BDAD.html)
