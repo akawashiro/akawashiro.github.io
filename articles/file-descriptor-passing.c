@@ -114,7 +114,7 @@ void child(int sock) {
       break;
     printf("Child: read %zd\n", size);
     if (fd != -1) {
-      dprintf(fd, "Child: hello, world fd=%d\n", fd);
+      dprintf(fd, "Child: hello, world fd=%d pid=%d\n", fd, getpid());
       close(fd);
     }
   }
@@ -127,7 +127,7 @@ void parent(int sock) {
 
   fd = 1;
   size = sock_fd_write(sock, "1", 1, 1);
-  printf("Parent: wrote %zd fd=%d\n", size, fd);
+  printf("Parent: wrote %zd fd=%d pid=%d\n", size, fd, getpid());
 }
 
 int main(int argc, char **argv) {
