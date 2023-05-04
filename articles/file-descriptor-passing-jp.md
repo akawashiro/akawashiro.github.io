@@ -1,17 +1,25 @@
 # File Descriptor Passingの仕組み <!-- omit in toc -->
 
+File Descriptor Passingとは、LinuxにおいてUNIX domain socketを使ってファイルディスクリプタをプロセス間でやり取りする手法です。ファイルディスクリプタを受け取る側にそのファイルを開く権限がない場合でも、そのファイルへの読み書きが行えるようになります。主にソフトウェアをセキュリティ的に強固にするために使われる手法であり、[gcs-fuse-csi-driver](https://github.com/GoogleCloudPlatform/gcs-fuse-csi-driver)[^1] などで使われています。
+
+この記事では、File Descriptor Passingがどのように実現されるかを説明します。まず、前提知識であるファイルディスクリプタとUNIX domain socketを説明し、その後File Descriptor Passingの挙動を解説します。
+
 ## 目次 <!-- omit in toc -->
-- [File Descriptor Passingとは何か?](#file-descriptor-passingとは何か)
+- [ファイルディスクリプタとは何か](#ファイルディスクリプタとは何か)
+- [UNIX domain socketとは何か](#unix-domain-socketとは何か)
 - [File Descriptor Passingの例](#file-descriptor-passingの例)
 - [カーネル](#カーネル)
 - [参考](#参考)
 - [連絡先](#連絡先)
 
-## File Descriptor Passingとは何か?
-File Descriptor Passingとは、LinuxにおいてUNIX domain socketを使ってファイルディスクリプタをプロセス間でやり取りする手法です。ファイルディスクリプタを受け取る側にそのファイルを開く権限がない場合でも、そのファイルへの読み書きが行えるようになります。主にソフトウェアをセキュリティ的に強固にするために使われる手法であり、[gcs-fuse-csi-driver](https://github.com/GoogleCloudPlatform/gcs-fuse-csi-driver)[^1] などで使われています。
+## ファイルディスクリプタとは何か
+> UNIXのファイル記述子は、一種のケイパビリティである。sendmsg() システムコールを使うとプロセス間でファイル記述子をやり取りすることができる。つまり、UNIXのプロセスが持つファイル記述子テーブルは「ケイパビリティリスト (C-list)」の実例と見ることもできる。
+- [ファイル記述子](https://ja.wikipedia.org/wiki/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E8%A8%98%E8%BF%B0%E5%AD%90)
+
+## UNIX domain socketとは何か
 
 ## File Descriptor Passingの例
-File Descriptor Passingを使って、プロセス間でファイルディスクリプタを送受信する例を下に示します。長いので折りたたんでいます。この例は[FD passing for DRI.Next](https://keithp.com/blogs/fd-passing/)より引用、一部改変したものです。
+冒頭で述べた等にFile Descriptor PassingとはUNIX domain socketを使ってファイルディスクリプタをプロセス間でやり取りする手法でした。File Descriptor Passingを使って、プロセス間でファイルディスクリプタを送受信する例を下に示します。長いので折りたたんでいます。この例は[FD passing for DRI.Next](https://keithp.com/blogs/fd-passing/)より引用、一部改変したものです。
 
 <details>
 <summary>file-descriptor-passing.c</summary>
