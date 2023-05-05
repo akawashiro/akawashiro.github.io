@@ -258,6 +258,10 @@ Child: hello, world fd=3 pid=135181
 - [FD passing for DRI.Next](https://keithp.com/blogs/fd-passing/)
 - [https://blog.cloudflare.com/know-your-scm_rights/](https://blog.cloudflare.com/know-your-scm_rights/)
 - "Socket"-level control message types https://elixir.bootlin.com/linux/v5.17.3/source/include/linux/socket.h#L163
+- [UNIXドメインソケット](https://ja.wikipedia.org/wiki/UNIX%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E3%82%BD%E3%82%B1%E3%83%83%E3%83%88)
+- [dup(2)](https://man7.org/linux/man-pages/man2/dup.2.html)
+- [File Descriptor Transfer over Unix Domain Sockets](https://copyconstruct.medium.com/file-descriptor-transfer-over-unix-domain-sockets-dcbbf5b3b6ec)
+- [Seamless file descriptor transfer between processes with pidfd and pidfd_getfd](https://copyconstruct.medium.com/seamless-file-descriptor-transfer-between-processes-with-pidfd-and-pidfd-getfd-816afcd19ed4)
 
 ## 連絡先
 この記事に誤りがあった場合は[Twitter](https://twitter.com/a_kawashiro)等で連絡をください。修正します。その他の連絡先は [https://akawashiro.github.io/](https://akawashiro.github.io/) にあります。
