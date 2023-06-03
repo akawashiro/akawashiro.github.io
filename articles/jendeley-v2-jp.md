@@ -14,6 +14,7 @@
   - [接尾辞木を用いた実装](#接尾辞木を用いた実装)
     - [接尾辞木とは](#接尾辞木とは)
     - [Ukkonen のアルゴリズムを用いた接尾辞木の構築](#ukkonen-のアルゴリズムを用いた接尾辞木の構築)
+  - [接尾辞木を用いた実装の性能](#接尾辞木を用いた実装の性能)
 - [まとめ](#まとめ)
 - [参考](#参考)
 - [お願い](#お願い)
@@ -92,6 +93,11 @@ jendeley のインクリメンタルな曖昧検索には検索する対象の�
 - [Ukkonen's suffix tree algorithm in plain English](https://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english)
 - [Ukkonen’s Suffix Tree Construction – Part 1](https://www.geeksforgeeks.org/ukkonens-suffix-tree-construction-part-1/)
 - [Ukkonen's algorithm - Wikipedia](https://en.wikipedia.org/wiki/Ukkonen%27s_algorithm)
+
+### 接尾辞木を用いた実装の性能
+
+下の画像は jendeley で"Type theory"と検索しているときのログです。Ukkonen のアルゴリズムで接尾辞木を構築することで 3820ms で接尾辞木の構築が完了し、その後の検索クエリに 67ms から 130ms で応答できていることがわかります。
+<img src="./jendeley-search-log.png" width="800">
 
 ## まとめ
 
