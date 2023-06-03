@@ -109,6 +109,8 @@ jendeley では v2.0 のリリースにあたって、登録した全ての文�
   未踏プロジェクトで検索エンジンを作っていたときの反省文書です。
 - [fzf](https://github.com/junegunn/fzf)
   日々使っている曖昧検索ツールです。
+- [fzf のスコア計算を読んでみる](https://en-jp.wantedly.com/companies/wantedly/post_articles/306103)
+  fzf が検索クエリに対してどのようにスコアを計算しているかが解説されています。
 - [https://ja.wikipedia.org/wiki/接尾辞木](https://ja.wikipedia.org/wiki/%E6%8E%A5%E5%B0%BE%E8%BE%9E%E6%9C%A8)
 - [Ukkonen's suffix tree algorithm in plain English](https://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english)
   Ukkonen のアルゴリズムの挙動を把握するときに役立つ記事です。
