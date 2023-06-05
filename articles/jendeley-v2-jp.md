@@ -1,5 +1,8 @@
 # jendeley v2 - インクリメンタルな曖昧検索の実装 <!-- omit in toc -->
 
+<script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
+<script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
 [jendeley](https://zenn.dev/a_kawashiro/articles/a2170f967f9508)という JSON ベースの文書管理ソフトウェアを作って日々使っています。先日、バージョン 2 にアップデートするに当たって、長らく欲しかった文書全体に対するインクリメンタルな曖昧検索機能を実装しました。
 
 ## 目次 <!-- omit in toc -->
@@ -55,7 +58,7 @@ jendeley は v2.0.0 でインクリメンタルな曖昧検索を実装しまし
 
 実装について説明する前に jendeley のインクリメンタルな曖昧検索に求められる性能を説明します。
 
-まず、検索対象となる文字列のサイズです。現在、僕の jendeley のデータベースのサイズは 117MiByte あり、その大部分が登録した文書の本文です。Python の簡単なスクリプトで集計したところ 109811215 = $ 1.0 \times 10^8 $ 文字ありました。
+まず、検索対象となる文字列のサイズです。現在、僕の jendeley のデータベースのサイズは 117MiByte あり、その大部分が登録した文書の本文です。Python の簡単なスクリプトで集計したところ $ 1.0 \times 10^8 $ 文字ありました。
 
 ```
 $ ls -alh jendeley_db.json
