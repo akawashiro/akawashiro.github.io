@@ -65,9 +65,7 @@ $ ls -alh jendeley_db.json
 -rw-r--r-- 1 akira akira 117M  5月 26 21:47 jendeley_db.json
 ```
 
-次に応答時間です。今回は 100ms 以内に応答を返すことを目標に設定しました。100ms に設定した理由は、人間の反応速度の限界が 100ms 程度だからです。[^1]
-
-[^1]: [全身反応時間の研究とその応用](https://www.japan-sports.or.jp/Portals/0/data/supoken/doc/studiesreports/1960_1970/S3809.pdf)
+次に応答時間です。今回は 100ms 以内に応答を返すことを目標に設定しました。この値には特に根拠がありません。この程度であればリアルタイムに見えるだろう考えたので、このように設定しました。
 
 ### ナイーブな実装
 
