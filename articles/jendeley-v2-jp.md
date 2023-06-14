@@ -129,3 +129,7 @@ jendeley では v2.0 のリリースにあたって、登録した全ての文�
 ## 連絡先
 
 この記事に誤りがあった場合は[Twitter](https://twitter.com/a_kawashiro)等で連絡をください。修正します。その他の連絡先は [https://akawashiro.github.io/](https://akawashiro.github.io/#links) にあります。
+
+## 謝辞
+
+事前に原稿を読んでコメントをくださった、[gky360](https://twitter.com/gky360)さん、[Shuhei Kadowaki](https://twitter.com/kdwkshh)さん、[パセリなずな](https://twitter.com/ocxtal)さん、ありがとうございました。
