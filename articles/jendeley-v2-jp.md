@@ -19,13 +19,14 @@
     - [Ukkonen のアルゴリズムを用いた接尾辞木の構築](#ukkonen-のアルゴリズムを用いた接尾辞木の構築)
   - [接尾辞木を用いた実装の性能](#接尾辞木を用いた実装の性能)
 - [まとめ](#まとめ)
-- [参考](#参考)
+- [謝辞](#謝辞)
 - [お願い](#お願い)
 - [連絡先](#連絡先)
+- [参考文献](#参考文献)
 
 ## jendeley とは
 
-まずはじめに jendeley を簡単に紹介します。jendeley とは僕が作っている文書管理ソフトウェアです。`npm i @a_kawashiro/jendeley`でインストールできます。
+まずはじめに [jendeley](https://github.com/akawashiro/jendeley) を簡単に紹介します。[jendeley](https://github.com/akawashiro/jendeley) とは僕が作っている文書管理ソフトウェアです。`npm i @a_kawashiro/jendeley`でインストールできます。
 
 - データベースを人間に可読な JSON で保持すること
 - サーバではなくローカルの PC で動作すること
@@ -106,7 +107,19 @@ jendeley のインクリメンタルな曖昧検索には検索する対象の�
 
 jendeley では v2.0 のリリースにあたって、登録した全ての文書を対象とするインクリメンタルファジー検索を実装しました。この検索を高速に行うため、接尾辞木を Ukkonen のアルゴリズムを用いて構築しました。
 
-## 参考
+## 謝辞
+
+事前に原稿を読んでコメントをくださった、[gky360](https://twitter.com/gky360)さん、[Shuhei Kadowaki](https://twitter.com/kdwkshh)さん、[パセリなずな](https://twitter.com/ocxtal)さん、ありがとうございました。
+
+## お願い
+
+[Github の jendeley のリポジトリ](https://github.com/akawashiro/jendeley)にスターしてください。
+
+## 連絡先
+
+この記事に誤りがあった場合は[Twitter](https://twitter.com/a_kawashiro)等で連絡をください。修正します。その他の連絡先は [https://akawashiro.github.io/](https://akawashiro.github.io/#links) にあります。
+
+## 参考文献
 
 - [検索エンジンを自作する夢](https://a-kawashiro.hatenablog.com/entry/2020/03/06/192527)
   未踏プロジェクトで検索エンジンを作っていたときの反省文書です。
@@ -121,15 +134,3 @@ jendeley では v2.0 のリリースにあたって、登録した全ての文�
   Ukkonen のアルゴリズムの実装に際しては Stack Overflow のものよりも役立つかもしれません。
 - [Ukkonen's algorithm - Wikipedia](https://en.wikipedia.org/wiki/Ukkonen%27s_algorithm)
   Ukkonen のアルゴリズムの概略を把握するのに良いです。
-
-## お願い
-
-[Github の jendeley のリポジトリ](https://github.com/akawashiro/jendeley)にスターしてください。
-
-## 連絡先
-
-この記事に誤りがあった場合は[Twitter](https://twitter.com/a_kawashiro)等で連絡をください。修正します。その他の連絡先は [https://akawashiro.github.io/](https://akawashiro.github.io/#links) にあります。
-
-## 謝辞
-
-事前に原稿を読んでコメントをくださった、[gky360](https://twitter.com/gky360)さん、[Shuhei Kadowaki](https://twitter.com/kdwkshh)さん、[パセリなずな](https://twitter.com/ocxtal)さん、ありがとうございました。
