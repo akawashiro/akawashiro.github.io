@@ -92,6 +92,8 @@ jendeley のインクリメンタルな曖昧検索には検索する対象の�
 
 ところが、接尾辞木を$O(n)$で構築するアルゴリズムが存在します。[Ukkonen のアルゴリズム](https://en.wikipedia.org/wiki/Ukkonen%27s_algorithm)です。詳細は省略しますが、Ukkonen のアルゴリズムを使えば接尾辞木を $O(n)$で構築することができます。jendeley での実装は [jendeley-backend/src/suffix_patricia_tree.ts](https://github.com/akawashiro/jendeley/blob/main/jendeley-backend/src/suffix_patricia_tree.ts)にあります。
 
+接尾辞木は文書ごとに構築します。構築のタイミングは最初にその文書が全文検索の対象になったときです。一度構築した接尾辞木はキャッシュされます。
+
 実装に際しては以下の記事が大変参考になりました。特に 1 つ目の Stack Overflow の記事は構築の過程が丁寧に説明されており、アルゴリズムの挙動を把握する上で非常に役立ちました。
 
 - [Ukkonen's suffix tree algorithm in plain English](https://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english)
