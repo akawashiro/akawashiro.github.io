@@ -309,3 +309,97 @@ $ ./parse_core ${CORE_FILENAME}
 prstatus->pr_pid: 931088
 regs->rip: 55555555528f
 ```
+
+- `55555555528f` に対応するのは `555555555000-555555556000` の部分。
+
+```bash
+555555554000-555555555000 r--p 00000000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555555000-555555556000 r-xp 00001000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555556000-555555557000 r--p 00002000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555557000-555555558000 r--p 00002000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555558000-555555559000 rw-p 00003000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+```
+
+- セグメントヘッダの情報を合わせて考えると、`55555555528f` は `55555555528f - 555555554000 = 128f` に対応している。
+
+```
+$ readelf -l make_core
+
+Elf file type is DYN (Position-Independent Executable file)
+Entry point 0x10e0
+There are 13 program headers, starting at offset 64
+
+Program Headers:
+  Type           Offset             VirtAddr           PhysAddr
+                 FileSiz            MemSiz              Flags  Align
+  PHDR           0x0000000000000040 0x0000000000000040 0x0000000000000040
+                 0x00000000000002d8 0x00000000000002d8  R      0x8
+  INTERP         0x0000000000000318 0x0000000000000318 0x0000000000000318
+                 0x000000000000001c 0x000000000000001c  R      0x1
+      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
+  LOAD           0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000730 0x0000000000000730  R      0x1000
+  LOAD           0x0000000000001000 0x0000000000001000 0x0000000000001000
+                 0x00000000000002d1 0x00000000000002d1  R E    0x1000
+  LOAD           0x0000000000002000 0x0000000000002000 0x0000000000002000
+                 0x00000000000000fc 0x00000000000000fc  R      0x1000
+  LOAD           0x0000000000002d98 0x0000000000003d98 0x0000000000003d98
+                 0x0000000000000280 0x0000000000000288  RW     0x1000
+  DYNAMIC        0x0000000000002da8 0x0000000000003da8 0x0000000000003da8
+                 0x00000000000001f0 0x00000000000001f0  RW     0x8
+  NOTE           0x0000000000000338 0x0000000000000338 0x0000000000000338
+                 0x0000000000000030 0x0000000000000030  R      0x8
+  NOTE           0x0000000000000368 0x0000000000000368 0x0000000000000368
+                 0x0000000000000044 0x0000000000000044  R      0x4
+  GNU_PROPERTY   0x0000000000000338 0x0000000000000338 0x0000000000000338
+                 0x0000000000000030 0x0000000000000030  R      0x8
+  GNU_EH_FRAME   0x000000000000201c 0x000000000000201c 0x000000000000201c
+                 0x0000000000000034 0x0000000000000034  R      0x4
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RW     0x10
+  GNU_RELRO      0x0000000000002d98 0x0000000000003d98 0x0000000000003d98
+                 0x0000000000000268 0x0000000000000268  R      0x1
+
+ Section to Segment mapping:
+  Segment Sections...
+   00
+   01     .interp
+   02     .interp .note.gnu.property .note.gnu.build-id .note.ABI-tag .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rela.dyn .rela.plt
+   03     .init .plt .plt.got .plt.sec .text .fini
+   04     .rodata .eh_frame_hdr .eh_frame
+   05     .init_array .fini_array .dynamic .got .data .bss
+   06     .dynamic
+   07     .note.gnu.property
+   08     .note.gnu.build-id .note.ABI-tag
+   09     .note.gnu.property
+   10     .eh_frame_hdr
+   11
+   12     .init_array .fini_array .dynamic .got
+```
+
+- `128f` 周辺をディスアセンブルしてみると確かに `0xdeadbeefdeadbeef` を書き込んでいそうなことがわかる。
+
+```bash
+$ objdump -d make_core | grep 128f -A 10 -B 10
+    125f:       48 c7 85 e0 ef ff ff    movq   $0x0,-0x1020(%rbp)
+    1266:       00 00 00 00
+    126a:       eb 2e                   jmp    129a <main+0xd1>
+    126c:       48 8b 85 e0 ef ff ff    mov    -0x1020(%rbp),%rax
+    1273:       48 8d 14 c5 00 00 00    lea    0x0(,%rax,8),%rdx
+    127a:       00
+    127b:       48 8d 05 8e 2d 00 00    lea    0x2d8e(%rip),%rax        # 4010 <a>
+    1282:       48 01 d0                add    %rdx,%rax
+    1285:       48 b9 ef be ad de ef    movabs $0xdeadbeefdeadbeef,%rcx
+    128c:       be ad de
+    128f:       48 89 08                mov    %rcx,(%rax)
+    1292:       48 83 85 e0 ef ff ff    addq   $0x1,-0x1020(%rbp)
+    1299:       01
+    129a:       48 81 bd e0 ef ff ff    cmpq   $0xfffff,-0x1020(%rbp)
+    12a1:       ff ff 0f 00
+    12a5:       76 c5                   jbe    126c <main+0xa3>
+    12a7:       b8 00 00 00 00          mov    $0x0,%eax
+    12ac:       48 8b 55 f8             mov    -0x8(%rbp),%rdx
+    12b0:       64 48 2b 14 25 28 00    sub    %fs:0x28,%rdx
+    12b7:       00 00
+    12b9:       74 05                   je     12c0 <main+0xf7>
+```
