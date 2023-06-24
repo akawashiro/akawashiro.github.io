@@ -6,7 +6,6 @@
 # https://gist.github.com/akawashiro/128ab5c9f32de95e1bfc1b2f774b8ec7#file-00-12-01-102-847748_-run-sh-log-L9012
 
 gcc -o ./make_core ./make_core.c
-
 sudo bash -c 'echo core.%t > /proc/sys/kernel/core_pattern'
 echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
 
