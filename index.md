@@ -1,8 +1,7 @@
 ---
 title: Akira Kawata
+layout: default
 ---
-
-# Akira Kawata <!-- omit in toc -->
 
 ## Table of Contents <!-- omit in toc -->
 
