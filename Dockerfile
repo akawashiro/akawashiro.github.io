@@ -17,5 +17,4 @@ RUN bundle exec jekyll build
 
 FROM nginx:latest
 COPY --from=builder /akawashiro.github.io/_site /usr/share/nginx/html
-COPY --from=builder /akawashiro.github.io /akawashiro.github.io
 COPY nginx.conf /etc/nginx/nginx.conf
