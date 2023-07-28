@@ -1,4 +1,8 @@
-# Linuxのローダを自作する <!-- omit in toc -->
+---
+title: Linuxのローダを自作する
+layout: default
+---
+
 ## 概要 <!-- omit in toc -->
 Linuxのスタンダードなローダ、`ld-linux-x86-64.so.2` の挙動を完全に理解するために、`ld-linux-x86-64.so.2`を完全に置き換え可能な [https://github.com/akawashiro/sloader](https://github.com/akawashiro/sloader) を2年ほど前から開発しており、ある程度動くようになってきました。
 

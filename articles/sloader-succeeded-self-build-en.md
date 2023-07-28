@@ -1,4 +1,8 @@
-# sloader: alternative Linux loader <!-- omit in toc -->
+---
+title: sloader: alternative Linux loader
+layout: default
+---
+
 ## Summary <!-- omit in toc -->
 In order to fully understand the behavior of the standard Linux loader, `ld-linux-x86-64.so.2`, I am developping a complete replacement for `ld-linux-x86-64.so.2` [https://github.com/akawashiro/sloader](https://github.com/akawashiro/sloader) for about two years and now it can launch all softwares t obuild sloader itself and some GUI applications.
 
