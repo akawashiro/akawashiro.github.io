@@ -1,31 +1,35 @@
-# File Descriptor Passingの仕組み <!-- omit in toc -->
+# File Descriptor Passing の仕組み <!-- omit in toc -->
 
-File Descriptor Passingとは、LinuxにおいてUNIX domain socketを使ってファイルディスクリプタをプロセス間でやり取りする手法です。ファイルディスクリプタを受け取る側にそのファイルを開く権限がない場合でも、そのファイルへの読み書きが行えるようになります。主にソフトウェアをセキュリティ的に強固にするために使われる手法であり、[gcs-fuse-csi-driver](https://github.com/GoogleCloudPlatform/gcs-fuse-csi-driver)[^1] などで使われています。
+File Descriptor Passing とは、Linux において UNIX domain socket を使ってファイルディスクリプタをプロセス間でやり取りする手法です。ファイルディスクリプタを受け取る側にそのファイルを開く権限がない場合でも、そのファイルへの読み書きが行えるようになります。主にソフトウェアをセキュリティ的に強固にするために使われる手法であり、[gcs-fuse-csi-driver](https://github.com/GoogleCloudPlatform/gcs-fuse-csi-driver)[^1] などで使われています。
 
-この記事では、File Descriptor Passingがどのように実現されるかを説明します。まず、前提知識であるファイルディスクリプタとUNIX domain socketを説明し、その後File Descriptor Passingの挙動を解説します。
+この記事では、File Descriptor Passing がどのように実現されるかを説明します。まず、前提知識であるファイルディスクリプタと UNIX domain socket を説明し、その後 File Descriptor Passing の挙動を解説します。
 
 ## 目次 <!-- omit in toc -->
+
 - [ファイルディスクリプタとは何か](#ファイルディスクリプタとは何か)
-- [UNIX domain socketとは何か](#unix-domain-socketとは何か)
-- [File Descriptor Passingの例](#file-descriptor-passingの例)
+- [UNIX domain socket とは何か](#unix-domain-socketとは何か)
+- [File Descriptor Passing の例](#file-descriptor-passingの例)
 - [カーネル](#カーネル)
 - [参考](#参考)
 - [連絡先](#連絡先)
 
 ## ファイルディスクリプタとは何か
-> UNIXのファイル記述子は、一種のケイパビリティである。sendmsg() システムコールを使うとプロセス間でファイル記述子をやり取りすることができる。つまり、UNIXのプロセスが持つファイル記述子テーブルは「ケイパビリティリスト (C-list)」の実例と見ることもできる。
+
+> UNIX のファイル記述子は、一種のケイパビリティである。sendmsg() システムコールを使うとプロセス間でファイル記述子をやり取りすることができる。つまり、UNIX のプロセスが持つファイル記述子テーブルは「ケイパビリティリスト (C-list)」の実例と見ることもできる。
+
 - [ファイル記述子](https://ja.wikipedia.org/wiki/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E8%A8%98%E8%BF%B0%E5%AD%90)
 
-## UNIX domain socketとは何か
+## UNIX domain socket とは何か
 
-## File Descriptor Passingの例
-冒頭で述べた等にFile Descriptor PassingとはUNIX domain socketを使ってファイルディスクリプタをプロセス間でやり取りする手法でした。File Descriptor Passingを使って、プロセス間でファイルディスクリプタを送受信する例を下に示します。長いので折りたたんでいます。この例は[FD passing for DRI.Next](https://keithp.com/blogs/fd-passing/)より引用、一部改変したものです。
+## File Descriptor Passing の例
+
+冒頭で述べた等に File Descriptor Passing とは UNIX domain socket を使ってファイルディスクリプタをプロセス間でやり取りする手法でした。File Descriptor Passing を使って、プロセス間でファイルディスクリプタを送受信する例を下に示します。長いので折りたたんでいます。この例は[FD passing for DRI.Next](https://keithp.com/blogs/fd-passing/)より引用、一部改変したものです。
 
 <details>
 <summary>file-descriptor-passing.c</summary>
 
 ```
-/* 
+/*
  * Run this program with
  * gcc file-descriptor-passing.c -o file-descriptor-passing && ./file-descriptor-passing
  *
@@ -181,9 +185,11 @@ int main(int argc, char **argv) {
   return 0;
 }
 ```
+
 </details>
 
-このプログラムは親と子の２つのプロセスを生成します。親プロセスは標準出力を指すファイルディスクリプタ(`fd 1`)をUnix domain socketで子プロセスに渡します。
+このプログラムは親と子の２つのプロセスを生成します。親プロセスは標準出力を指すファイルディスクリプタ(`fd 1`)を Unix domain socket で子プロセスに渡します。
+
 ```
 ssize_t sock_fd_write(int sock, void *buf, ssize_t buflen, int fd) {
   /* 省略 */
@@ -204,7 +210,8 @@ void parent(int sock) {
 }
 ```
 
-子プロセスはUnix domain socketから親プロセスの標準出力を指すファイルディスクリプタを受け取り、そのファイルディスクリプタにメッセージを書き込みます。
+子プロセスは Unix domain socket から親プロセスの標準出力を指すファイルディスクリプタを受け取り、そのファイルディスクリプタにメッセージを書き込みます。
+
 ```
 ssize_t sock_fd_read(int sock, void *buf, ssize_t bufsize, int *fd) {
   /* 省略 */
@@ -235,9 +242,10 @@ void child(int sock) {
 ```
 
 このプログラムをコンパイル実行すると、子プロセスの書き込んだ `Child: hello, world fd=3 pid=135181` という文字列が親プロセスの標準出力に書き込まれ、画面に出力されます。
+
 ```
 $ gcc file-descriptor-passing.c -o file-descriptor-passing
-$ ./file-descriptor-passing 
+$ ./file-descriptor-passing
 sock_fd_write: passing fd 1
 Parent: wrote 1 fd=1 pid=135180
 $ received fd 3
@@ -246,6 +254,7 @@ Child: hello, world fd=3 pid=135181
 ```
 
 ## カーネル
+
 - https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/net/unix/af_unix.c#L1904
 - https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/net/core/scm.c#L155-L161
 - https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/net/core/scm.c#L65
@@ -253,17 +262,19 @@ Child: hello, world fd=3 pid=135181
 - https://github.com/akawashiro/linux/blob/e1e12e81071431dbc6a93a6436c3997ee481a41a/fs/file.c#L604
 
 ## 参考
+
 - [unix(7) — Linux manual page](https://man7.org/linux/man-pages/man7/unix.7.html)
-  - SCM_RIGHTSの部分
+  - SCM_RIGHTS の部分
 - [FD passing for DRI.Next](https://keithp.com/blogs/fd-passing/)
 - [https://blog.cloudflare.com/know-your-scm_rights/](https://blog.cloudflare.com/know-your-scm_rights/)
 - "Socket"-level control message types https://elixir.bootlin.com/linux/v5.17.3/source/include/linux/socket.h#L163
-- [UNIXドメインソケット](https://ja.wikipedia.org/wiki/UNIX%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E3%82%BD%E3%82%B1%E3%83%83%E3%83%88)
+- [UNIX ドメインソケット](https://ja.wikipedia.org/wiki/UNIX%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E3%82%BD%E3%82%B1%E3%83%83%E3%83%88)
 - [dup(2)](https://man7.org/linux/man-pages/man2/dup.2.html)
 - [File Descriptor Transfer over Unix Domain Sockets](https://copyconstruct.medium.com/file-descriptor-transfer-over-unix-domain-sockets-dcbbf5b3b6ec)
 - [Seamless file descriptor transfer between processes with pidfd and pidfd_getfd](https://copyconstruct.medium.com/seamless-file-descriptor-transfer-between-processes-with-pidfd-and-pidfd-getfd-816afcd19ed4)
 
 ## 連絡先
+
 この記事に誤りがあった場合は[Twitter](https://twitter.com/a_kawashiro)等で連絡をください。修正します。その他の連絡先は [https://akawashiro.github.io/](https://akawashiro.github.io/) にあります。
 
-[^1]: [Shingo Omuraさんのツイート](https://twitter.com/everpeace/status/1649211343428550661)
+[^1]: [Shingo Omura さんのツイート](https://twitter.com/everpeace/status/1649211343428550661)

@@ -6,22 +6,26 @@ layout: default
 ## コアダンプファイルとは何?
 
 - プログラムがクラッシュしたときにでるやつ
+
 ```
 ./run.sh: line 13: 383833 Segmentation fault      (core dumped) ./make_core
 ```
+
 - [man 5 core](https://linuxjm.osdn.jp/html/LDP_man-pages/man5/core.5.html) より抜粋
-> ある種のシグナルを受けた場合のデフォルトのアクションは、 プロセスを終了し (terminate)、 コアダンプファイル (core dump file) を生成することである。コアダンプファイルは、ディスク上に生成される 終了時のプロセスのメモリーイメージを内容とするファイルである。 このイメージをデバッガ (例えば gdb(1)) に読み込んで、 プログラムが終了した時点のプログラムの状態を検査することができる。 どのシグナルを受けたときにプロセスがコアダンプを生成するかのリストは signal(7) に書かれている。
+  > ある種のシグナルを受けた場合のデフォルトのアクションは、 プロセスを終了し (terminate)、 コアダンプファイル (core dump file) を生成することである。コアダンプファイルは、ディスク上に生成される 終了時のプロセスのメモリーイメージを内容とするファイルである。 このイメージをデバッガ (例えば gdb(1)) に読み込んで、 プログラムが終了した時点のプログラムの状態を検査することができる。 どのシグナルを受けたときにプロセスがコアダンプを生成するかのリストは signal(7) に書かれている。
 - 使い方
   - `gdb <プログラムへのパス> <コアダンプファイルへのパス>`
 
 ## gdb の限界
+
 - `gdb` は壊れたプログラムを処理できない
   - sold の出力結果を入れると `gdb` 自身のコアができる
 - `gdb` を使わずにコアダンプファイルが読みたいので読んでみました
 
 ## コアダンプファイルのフォーマット
-- コアダンプファイルはただのELFファイル
-- ELFヘッダの `e_type` フィールドが `ET_CORE` になっている
+
+- コアダンプファイルはただの ELF ファイル
+- ELF ヘッダの `e_type` フィールドが `ET_CORE` になっている
 - プログラムヘッダテーブルは
   - `pt_type == PT_LOAD` のものはクラッシュしたときのメモリの内容を表す
   - `pt_type == PT_NOTE` のものはレジスタの値やプロセスの情報が入っている
@@ -29,6 +33,7 @@ layout: default
 ## デモ
 
 ### コアダンプファイルを生成するためのプログラム
+
 - 範囲外アクセスで コアダンプファイルを生成する C のプログラムをつくる。
 - 解析を簡単にするため、範囲外アクセスの前に `/proc/self/maps` を出力しておく。
 
@@ -60,6 +65,7 @@ gcc -o ./make_core ./make_core.c
 ```
 
 ### コアダンプファイルを生成
+
 - コアダンプファイルの生成場所を指定しておく。
 - コアダンプファイルのサイズ制限を外す。
 - ASLR は切っておく。
@@ -94,7 +100,8 @@ $ ./make_core
 ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
 ```
 
-### readelfを使ったコアダンプファイルの解析
+### readelf を使ったコアダンプファイルの解析
+
 - コアダンプファイルのセグメントを見てみる。
 - バッファオーバーランでどこを書こうとして Segmentation fault がおきたのかをしらべる。
   - RW がついているのがグローバル変数のおいてあるセクションのはず。
@@ -162,6 +169,7 @@ Program Headers:
 ```
 
 ### バイナリエディタを使ったコアダンプファイルの解析
+
 - 怪しいところをバイナリエディタで見てみる。
 - バッファオーバーランで`0xdeadbeefdeadbeef` を書きつぶして、プログラムの先頭まで書いてページのアクセス違反で落ちたことがわかる。
   - 通常プログラムの自体は RX でロードされる。
@@ -195,9 +203,10 @@ $ xxd -s 0x3000 -l 0x100000 ${CORE_FILENAME}
 ```
 
 ### コアダンプファイルの `PT_NOTE` の中身
+
 - コアダンプファイルの `PT_NOTE` を見てみる。
 - `NT_X86_XSTATE` という気になるパートがある。
-  - [tanakmuraさんが書いたxsave/xrstor についての記事](https://zenn.dev/tanakmura/articles/8af62a260ff05d) に詳細がある。
+  - [tanakmura さんが書いた xsave/xrstor についての記事](https://zenn.dev/tanakmura/articles/8af62a260ff05d) に詳細がある。
 
 ```bash
 $ readelf --note ./core.1687577511.931088
@@ -247,6 +256,7 @@ Displaying notes found at file offset 0x00000580 with length 0x000013f8:
 ```
 
 ### コアダンプファイルをパースするプログラム
+
 - コアダンプファイル自体をパースする C++のプログラムをつくる。
   - Process ID と RIP(プログラムカウンタ)を表示する。
   - `prstatus_t` 構造体にいろいろ入っている
@@ -337,16 +347,19 @@ int main(int argc, char const *argv[]) {
 ```
 
 ### 実行してみる
+
 ```bash
 $ g++ -o ./parse_core ./parse_core.cc
 $ ./parse_core ${CORE_FILENAME}
 prstatus->pr_pid: 931088
 regs->rip: 55555555528f
 ```
+
 - PID は 931088。
 - Segmentation fault が起きた RIP は 55555555528f と分かった。
 
 ### プログラムがクラッシュした命令を知りたい
+
 - `55555555528f` に対応するのは `555555555000-555555556000` の部分。
 
 ```bash
@@ -442,15 +455,18 @@ $ objdump -d make_core | grep 128f -A 10 -B 10
 ```
 
 ## readcore
+
 - いまやったようなことを手軽にやりたい
 - [https://github.com/akawashiro/readcore](https://github.com/akawashiro/readcore) を作っている
 
 ## おまけ - 誰が コアダンプファイルを生成しているのか?
-- コアダンプファイルを生成しているのはLinuxカーネル
+
+- コアダンプファイルを生成しているのは Linux カーネル
   - [fs/binfmt_elf.c](https://github.com/akawashiro/linux/blob/0457e5153e0e8420134f60921349099e907264ca/fs/binfmt_elf.c#L2162-L2169)
 - クラッシュしたときはユーザ空間のプロセスは動けないので当然といえは当然
 
 ## 参考文献
+
 - [man 5 core](https://linuxjm.osdn.jp/html/LDP_man-pages/man5/core.5.html)
 - [man 7 signal](https://linuxjm.osdn.jp/html/LDP_man-pages/man7/signal.7.html)
   - 標準シグナル

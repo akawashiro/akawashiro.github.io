@@ -1,4 +1,5 @@
-# QEMUでUbuntuの仮想マシンを作ってsshログインする
+# QEMU で Ubuntu の仮想マシンを作って ssh ログインする
+
 ```
 設定項目 	データ型 	本 Web ページでの設定値
 仮想マシン・イメージファイルのファイル名 	文字列 	/home/os001.qcow2
@@ -24,6 +25,8 @@ qemu-system-x86_64 -hda ${DISK_PATH} -m ${MEMORY_SIZE_MB} -boot d --enable-kvm -
 ssh localhost -p ${PORT_FORWARD} "mkdir /home/akira/.ssh/"
 scp -P ${PORT_FORWARD} ~/.ssh/id_rsa.pub localhost:~/.ssh/authorized_keys
 ```
+
 ## 参考
+
 - [QEMU をインストール，Ubuntu 仮想マシンの作成（Ubuntu 上](https://www.kkaneko.jp/tools/ubuntu/ubuntuqemu.html)
 - [QEMU/Options](https://wiki.gentoo.org/wiki/QEMU/Options)
