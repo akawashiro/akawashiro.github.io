@@ -36,7 +36,7 @@ layout: default
 - [Linux のローダを自作する](https://zenn.dev/a_kawashiro/articles/506a224d206418)
 - [Linux におけるデバイスファイルの仕組み](https://zenn.dev/a_kawashiro/articles/387fa97163dd66)
 - [jendeley - JSON ベースの文書管理ソフトウェア](https://zenn.dev/a_kawashiro/articles/a2170f967f9508)
-- [Linux kernel をソースコードからビルド、インストールするシェルスクリプトを書いた](./articles/linux-build-script.md)
+- [Linux kernel をソースコードからビルド、インストールするシェルスクリプトを書いた](./articles/linux-build-script.html)
 - [LD_AUDIT and Global Offset Table (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2022/01/08/220526)
 - [What is GNU_IFUNC? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2021/11/07/100540)
 - [What and how does libc save information into jmp_buf used in setjmp and longjmp? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2020/12/31/184339)
@@ -64,8 +64,8 @@ layout: default
   - Type theory for multistage programming including dependent types
   - [Paper](http://jssst.or.jp/files/user/taikai/2018/PPL/ppl1-3.pdf)
 - Private talk
-  - [Slide: /lib64/ld-linux-x86-64.so.2](https://docs.google.com/presentation/d/1WPxr6d_me_QU3mRWxBzs7y2iPhwV2YeAoB4EGcG9H90/edit?usp=sharing)
   - Random talk on glibc dynamic linker of Linux
+  - [Slide: /lib64/ld-linux-x86-64.so.2](https://docs.google.com/presentation/d/1WPxr6d_me_QU3mRWxBzs7y2iPhwV2YeAoB4EGcG9H90/edit?usp=sharing)
 
 ## Activities
 

@@ -1,4 +1,7 @@
-# Linux kernelをソースコードからビルド、インストールするシェルスクリプトを書いた
+---
+title: Linux kernelをソースコードからビルド、インストールするシェルスクリプトを書いた
+layout: default
+---
 
 スクリプトは [https://github.com/akawashiro/public-tools/blob/master/linux-install.sh](https://github.com/akawashiro/public-tools/blob/master/linux-install.sh) にある。
 
