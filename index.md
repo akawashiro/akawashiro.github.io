@@ -13,6 +13,7 @@ layout: default
 - [Work Experience](#work-experience)
 - [Software and Hardware](#software-and-hardware)
 - [GPG Public Key](#gpg-public-key)
+- [Current status](#current-status)
 
 ## Interests
 
@@ -132,3 +133,7 @@ layout: default
 
 - Fingure print: 3FB4269CA58D57F0326C1F7488737135568C1AC5
 - [Public key file](9804D984406FEE5605D5CB82A8DEC03E3DF3BDAD.html)
+
+## Current status
+
+<a class="twitter-timeline" href="https://twitter.com/a_kawashiro?ref_src=twsrc%5Etfw">Tweets by a_kawashiro</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
