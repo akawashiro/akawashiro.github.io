@@ -14,6 +14,8 @@ layout: default
 - [Software and Hardware](#software-and-hardware)
 - [GPG Public Key](#gpg-public-key)
 - [Current status](#current-status)
+  - [Mastodon](#mastodon)
+  - [X(twitter)](#xtwitter)
 
 ## Interests
 
@@ -136,4 +138,8 @@ layout: default
 
 ## Current status
 
+### Mastodon
+
+<iframe allowfullscreen sandbox="allow-top-navigation allow-scripts allow-popups allow-popups-to-escape-sandbox" width="400" height="800" src="https://mastofeed.com/apiv2/feed?userurl=https%3A%2F%2Fmstdn.jp%2Fusers%2Fa_kawashiro&theme=dark&size=100&header=true&replies=false&boosts=false"></iframe>
+### X(twitter)
 <a class="twitter-timeline" href="https://twitter.com/a_kawashiro?ref_src=twsrc%5Etfw">Tweets by a_kawashiro</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
