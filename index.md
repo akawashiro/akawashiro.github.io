@@ -36,6 +36,7 @@ layout: default
 
 ## Articles
 
+- [ros3fs - 高速なオブジェクトストレージ用のFUSE](./articles/ros3fs-jp)
 - [Linux のローダを自作する](https://zenn.dev/a_kawashiro/articles/506a224d206418)
 - [Linux におけるデバイスファイルの仕組み](https://zenn.dev/a_kawashiro/articles/387fa97163dd66)
 - [jendeley - JSON ベースの文書管理ソフトウェア](https://zenn.dev/a_kawashiro/articles/a2170f967f9508)
