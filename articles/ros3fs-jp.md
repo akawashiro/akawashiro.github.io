@@ -1,4 +1,6 @@
 # ros3fs
+[ros3fs](https://github.com/akawashiro/ros3fs)はS3互換のオブジェクトストレージのためのFUSEです。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新頻度が非常に低いという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。
+
 ## オブジェクトストレージ
 [AWS S3](https://aws.amazon.com/s3/)や[Cloudflare R2](https://developers.cloudflare.com/r2/)、[MinIO](https://min.io/)、[Apache Ozone](https://ozone.apache.org/)などはオブジェクトストレージと呼ばれるソフトウェアです。オブジェクトストレージはスケーラビリティにすぐれており、[AWS S3](https://aws.amazon.com/s3/)や[Cloudflare R2](https://developers.cloudflare.com/r2/)などのクラウドサービスとして提供されている場合は手軽に安価に使い始めることができます。
 
@@ -19,11 +21,23 @@ S3互換のAPIを持つオブジェクトストレージ向けのFUSEはAWS本�
 しかし、この二つの実装にはどちらも**遅い**という問題点があります。特にディレクトリ構造を走査するような操作は遅く、オブジェクト数の多いバケットをFUSEでマウントして`ls`コマンドを打つと体感できる程度の遅延があります。これはおそらく、dエントリのようなディレクトリ構造を保持する専用のデータ構造がないオブジェクトストレージを無理やりファイルシステムとして見せているために生じる遅延であり、根本的に解決することが困難な問題です。
 
 ## ros3fs
-この問題を回避して`ls`の遅延を最小化するために作ったのが[ros3fs](https://github.com/akawashiro/ros3fs)です。[ros3fs](https://github.com/akawashiro/ros3fs)はS3互換のオブジェクトストレージのためのFUSEであり、ディレクトリ構造の走査を含む読み出しの遅延を最小化することを目的に設計されています。 
+この問題を回避して`ls`の遅延を最小化するために作ったのが[ros3fs](https://github.com/akawashiro/ros3fs)です。[ros3fs](https://github.com/akawashiro/ros3fs)はS3互換のオブジェクトストレージのためのFUSEであり、ディレクトリ構造の走査を含む読み出しの遅延を最小化することを目的に設計されています。 遅延を最小化する代償として書き込みはサポートしません。また、次に述べるようにバケットに存在するデータと異なるデータを読みだすことがあります。
+
+遅延を最小化するために[ros3fs](https://github.com/akawashiro/ros3fs)はデータを極端にキャッシュします。[ros3fs](https://github.com/akawashiro/ros3fs)は起動時にすべてのオブジェクト名を取得しディレクトリ構造を構築します。また、一度アクセスしたデータはローカルに保存し、二回目以降のアクセスではそのデータを読みます。このため、[ros3fs](https://github.com/akawashiro/ros3fs)でバケットをマウントした後にそのバケットのオブジェクトが変更された場合、その変更を読みだせないケースがあります。
+
+このような思い切った設計の背景には、筆者のオブジェクトストレージの使い方があります。筆者はオブジェクトストレージをバックアップデータの保存先として使っており、そのバケットの更新頻度は非常に低いです。一方、バックアップしたデータを参照する頻度は更新頻度に比べて高いです。このため、バケットをマウントした後オブジェクトを変更するケースをサポートしない判断をしました。この判断により、読み取りについてはほかのS3向けのFUSEと比べて大幅に高速になっています。
 
 ## 性能比較
+ローカルに[Apache Ozone](https://ozone.apache.org/)のサーバを構築し、1000個のテキストファイルをバケットに格納してから、FUSEでマウントし`grep`で検索した時の性能を比較します。この性能比較は[compare_with_mountpoint-s3.sh](https://github.com/akawashiro/ros3fs/blob/master/compare_with_mountpoint-s3.sh)で行いました。なお、この性能比較では、キャッシュのウォームアップがあるため[ros3fs](https://github.com/akawashiro/ros3fs)にかなり有利なものです。
+
+[ros3fs](https://github.com/akawashiro/ros3fs)はコミットハッシュ`afa6156e753539b7a530be9c7c25cdb987b5ffad`、[s3fs-fuse](https://github.com/s3fs-fuse/s3fs-fuse)は`V1.90`、[mountpoint-s3](https://github.com/awslabs/mountpoint-s3)は`v1.0.2`を使い、OSは`Ubuntu 22.04.2 LTS`、CPUは`AMD Ryzen 9 5950X`です。
 
 ```bash
+./launch-ozone.sh
+```
+```bash
+./compare_with_mountpoint-s3.sh
+# 省略
 Benchmark 1: grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compare_with_mountpoint-s3/ros3fs_mountpoint -e '123'
   Time (mean ± σ):      15.0 ms ±   2.5 ms    [User: 1.7 ms, System: 4.4 ms]
   Range (min … max):    11.7 ms …  31.6 ms    198 runs
@@ -38,5 +52,14 @@ Benchmark 1: grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compar
   Time (mean ± σ):     10.904 s ±  2.504 s    [User: 0.003 s, System: 0.028 s]
   Range (min … max):    8.313 s … 15.699 s    10 runs
 ```
+
+キャッシュのウォームアップがあるため当然ですが、[ros3fs](https://github.com/akawashiro/ros3fs)が他二つの実装に比べて100倍から1000倍早いという結果になりました。
+
+| ros3fs             | s3fs-fuse          | mountpoint-s3       |
+| ------------------ | ------------------ | ------------------- |
+| 15.0 ms ±   2.5 ms | 2.062 s ±  0.043 s | 10.904 s ±  2.504 s |
+
+## まとめ
+S3互換のオブジェクトストレージのためのFUSE、[ros3fs](https://github.com/akawashiro/ros3fs)を実装しました。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新頻度が非常に低いという強い制約のもとではありますが、既存実装と非常に高速にデータの閲覧が可能にしました。
 
 [^1]: WindowsでFUSEを利用するのはあまり一般的ではないようです。[WinFsp](https://github.com/winfsp/winfsp)がありますが使ったことはありません。
