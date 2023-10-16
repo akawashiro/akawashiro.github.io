@@ -1,3 +1,8 @@
+---
+title: jendeley v2 - インクリメンタルな曖昧検索の実装
+layout: default
+---
+
 # jendeley v2 - インクリメンタルな曖昧検索の実装 <!-- omit in toc -->
 
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
