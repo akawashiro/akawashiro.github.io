@@ -5,7 +5,7 @@ layout: default
 
 # ros3fs - 高速なオブジェクトストレージ用の FUSE
 
-[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSE です。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。
+[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSE です。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。極端な例では既存実装に比べて 100~1000 倍の高速化を実現しました。
 
 ## オブジェクトストレージ
 
@@ -75,6 +75,7 @@ hoge
 ```bash
 ./compare_with_mountpoint-s3.sh
 # 省略
++ hyperfine --ignore-failure --warmup 3 'grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compare_with_mountpoint-s3/ros3fs_mountpoint -e '\''123'\'''
 Benchmark 1: grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compare_with_mountpoint-s3/ros3fs_mountpoint -e '123'
   Time (mean ± σ):      15.0 ms ±   2.5 ms    [User: 1.7 ms, System: 4.4 ms]
   Range (min … max):    11.7 ms …  31.6 ms    198 runs
@@ -98,6 +99,6 @@ Benchmark 1: grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compar
 
 ## まとめ
 
-S3 互換のオブジェクトストレージのための FUSE、[ros3fs](https://github.com/akawashiro/ros3fs)を実装しました。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新頻度が非常に低いという強い制約のもとではありますが、既存実装と非常に高速にデータの閲覧が可能にしました。
+S3 互換のオブジェクトストレージのための FUSE、[ros3fs](https://github.com/akawashiro/ros3fs)を実装しました。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新を反映しないという強い制約のもとではありますが、既存実装に比べて非常に高速にデータの閲覧が可能にしました。
 
 [^1]: Windows で FUSE を利用するのはあまり一般的ではないようです。[WinFsp](https://github.com/winfsp/winfsp)がありますが使ったことはありません。
