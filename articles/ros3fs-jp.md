@@ -1,9 +1,9 @@
 ---
-title: ros3fs - 高速なオブジェクトストレージ用の FUSE
+title: ros3fs - オブジェクトストレージ用の高速な FUSE
 layout: default
 ---
 
-# ros3fs - 高速なオブジェクトストレージ用の FUSE
+# ros3fs - オブジェクトストレージ用の高速な FUSE
 
 [ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSE です。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。極端な例では既存実装に比べて 100~1000 倍の高速化を実現しました。
 
