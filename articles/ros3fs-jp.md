@@ -5,7 +5,7 @@ layout: default
 
 # ros3fs - 高速なオブジェクトストレージ用の FUSE
 
-[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSE です。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新頻度が非常に低いという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。
+[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSE です。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。
 
 ## オブジェクトストレージ
 
@@ -31,9 +31,34 @@ S3 互換の API を持つオブジェクトストレージ向けの FUSE は AW
 
 ## ros3fs
 
-この問題を回避して`ls`の遅延を最小化するために作ったのが[ros3fs](https://github.com/akawashiro/ros3fs)です。[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSE であり、ディレクトリ構造の走査を含む読み出しの遅延を最小化することを目的に設計されています。 遅延を最小化する代償として書き込みはサポートしません。また、次に述べるようにバケットに存在するデータと異なるデータを読みだすことがあります。
+この問題を回避して`ls`の遅延を最小化するために作ったのが[ros3fs](https://github.com/akawashiro/ros3fs)です。[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSE であり、ディレクトリ構造の走査を含む読み出しの遅延を最小化することを目的に設計されています。
 
-遅延を最小化するために[ros3fs](https://github.com/akawashiro/ros3fs)はデータを極端にキャッシュします。[ros3fs](https://github.com/akawashiro/ros3fs)は起動時にすべてのオブジェクト名を取得しディレクトリ構造を構築します。また、一度アクセスしたデータはローカルに保存し、二回目以降のアクセスではそのデータを読みます。このため、[ros3fs](https://github.com/akawashiro/ros3fs)でバケットをマウントした後にそのバケットのオブジェクトが変更された場合、その変更を読みだせないケースがあります。
+Linux で[ros3fs](https://github.com/akawashiro/ros3fs)で使うにはビルドする必要があります。Ubuntu 22.04 で ros3fs をビルドする手順は以下の通りです。
+
+```bash
+$ sudo apt-get install -y cmake g++ git libfuse3-dev ninja-build zlib1g-dev libcurl4-openssl-dev libssl-dev ccache pkg-config
+$ git clone https://github.com/akawashiro/ros3fs.git
+$ cd ros3fs
+$ mkdir build
+$ ./build-aws-sdk-cpp.sh ./build
+$ cmake -S . -B build
+$ cmake --build build -- -j
+$ cmake --build build -- install
+```
+
+その後、このコマンドで S3 互換のオブジェクトストレージをマウントできます。マウントした後は`<MOUNTPOINT>`ディレクトリにオブジェクトストレージのデータがマウントされています。`ls`や`cat`などのコマンドを使って中身を確認することも可能です。
+
+```bash
+$ ./build/ros3fs <MOUNTPOINT> -f -d --endpoint=<ENDPOINT URL> --bucket_name=<BUCKET NAME ENDS WITH '/'> --cache_dir=<CACHE DIRECTORY>
+$ ls <MOUNTPOINT>
+dir_a/  testfile_a  testfile_b  testfile_c
+$ cat testfile_a
+hoge
+```
+
+先ほど述べたように、[ros3fs](https://github.com/akawashiro/ros3fs)は読み出しの遅延を最小化することを目的に設計されています。その代償としていくつかの制限があります。まず書き込みはサポートしません。これは書き込みをサポートすると[ros3fs](https://github.com/akawashiro/ros3fs)のキャッシュとオブジェクトストレージの間の整合性をとるのが困難になるためです。
+
+また、[ros3fs](https://github.com/akawashiro/ros3fs)はバケットに存在するデータと異なる古いデータを読みだすことがあります。遅延を最小化するために[ros3fs](https://github.com/akawashiro/ros3fs)はデータを極端にキャッシュします。[ros3fs](https://github.com/akawashiro/ros3fs)は起動時にすべてのオブジェクト名を取得しディレクトリ構造を構築します。また、一度アクセスしたデータはローカルに保存し、二回目以降のアクセスではそのデータを読みます。このため、[ros3fs](https://github.com/akawashiro/ros3fs)でバケットをマウントした後にそのバケットのオブジェクトが変更された場合、その変更を読みだせないケースがあります。
 
 このような思い切った設計の背景には、筆者のオブジェクトストレージの使い方があります。筆者はオブジェクトストレージをバックアップデータの保存先として使っており、そのバケットの更新頻度は非常に低いです。一方、バックアップしたデータを参照する頻度は更新頻度に比べて高いです。このため、バケットをマウントした後オブジェクトを変更するケースをサポートしない判断をしました。この判断により、読み取りについてはほかの S3 向けの FUSE と比べて大幅に高速になっています。
 
