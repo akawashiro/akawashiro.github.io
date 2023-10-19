@@ -79,20 +79,69 @@ hoge
 ```bash
 ./compare_with_mountpoint-s3.sh
 # 省略
-+ hyperfine --ignore-failure --warmup 3 'grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compare_with_mountpoint-s3/ros3fs_mountpoint -e '\''123'\'''
-Benchmark 1: grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compare_with_mountpoint-s3/ros3fs_mountpoint -e '123'
-  Time (mean ± σ):      15.0 ms ±   2.5 ms    [User: 1.7 ms, System: 4.4 ms]
-  Range (min … max):    11.7 ms …  31.6 ms    198 runs
+========== Compare grep performance without cache warmup ==========
+time grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/ros3fs_mountpoint -e 123
 
-+ hyperfine --ignore-failure --warmup 3 'grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compare_with_mountpoint-s3/s3fs-fuse_mountpoint -e '\''123'\'''
-Benchmark 1: grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compare_with_mountpoint-s3/s3fs-fuse_mountpoint -e '123'
-  Time (mean ± σ):      2.062 s ±  0.043 s    [User: 0.002 s, System: 0.023 s]
-  Range (min … max):    2.002 s …  2.153 s    10 runs
+real    0m3.046s
+user    0m0.000s
+sys     0m0.021s
+time grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/s3fs-fuse_mountpoint -e 123
 
-+ hyperfine --ignore-failure --warmup 3 'grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compare_with_mountpoint-s3/mountpoint-s3_mountpoint -e '\''123'\'''
-Benchmark 1: grep -Rnw /home/akira/ghq/github.com/akawashiro/ros3fs/build_compare_with_mountpoint-s3/mountpoint-s3_mountpoint -e '123'
-  Time (mean ± σ):     10.904 s ±  2.504 s    [User: 0.003 s, System: 0.028 s]
-  Range (min … max):    8.313 s … 15.699 s    10 runs
+real    0m2.042s
+user    0m0.005s
+sys     0m0.016s
+time grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/mountpoint-s3_mountpoint -e 123
+
+real    0m8.660s
+user    0m0.004s
+sys     0m0.024s
+============================================================
+========== Compare grep performance with cache warmup ==========
+Benchmark 1: grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/ros3fs_mountpoint -e '123'
+  Time (mean ± σ):      15.2 ms ±   1.1 ms    [User: 1.9 ms, System: 4.1 ms]
+  Range (min … max):    12.7 ms …  17.0 ms    10 runs
+
+Benchmark 1: grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/s3fs-fuse_mountpoint -e '123'
+  Time (mean ± σ):      2.056 s ±  0.028 s    [User: 0.004 s, System: 0.019 s]
+  Range (min … max):    2.009 s …  2.112 s    10 runs
+
+Benchmark 1: grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/mountpoint-s3_mountpoint -e '123'
+  Time (mean ± σ):     10.866 s ±  2.068 s    [User: 0.007 s, System: 0.023 s]
+  Range (min … max):    8.913 s … 14.761 s    10 runs
+
+=========================================================
+========== Compare find performance without cache warmup ==========                                                                                                time find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/ros3fs_mountpoint
+
+real    0m0.022s
+user    0m0.005s
+sys     0m0.000s
+time find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/s3fs-fuse_mountpoint
+
+real    0m0.090s
+user    0m0.001s
+sys     0m0.000s
+time find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/mountpoint-s3_mountpoint
+
+real    0m0.045s
+user    0m0.000s
+sys     0m0.003s
+============================================================
+========== Compare find performance with cache warmup ==========
+Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/ros3fs_mountpoint
+  Time (mean ± σ):       4.0 ms ±   0.2 ms    [User: 1.1 ms, System: 0.4 ms]
+  Range (min … max):     3.7 ms …   4.5 ms    10 runs
+
+  Warning: Command took less than 5 ms to complete. Results might be inaccurate.
+
+Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/s3fs-fuse_mountpoint
+  Time (mean ± σ):      22.5 ms ±   1.9 ms    [User: 0.8 ms, System: 0.3 ms]
+  Range (min … max):    19.2 ms …  26.0 ms    10 runs
+
+Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/mountpoint-s3_mountpoint
+  Time (mean ± σ):      43.8 ms ±   2.5 ms    [User: 1.1 ms, System: 0.4 ms]
+  Range (min … max):    41.2 ms …  49.3 ms    10 runs
+
+=========================================================
 ```
 
 キャッシュのウォームアップがあるため当然ですが、[ros3fs](https://github.com/akawashiro/ros3fs)が他二つの実装に比べて 100 倍から 1000 倍早いという結果になりました。
