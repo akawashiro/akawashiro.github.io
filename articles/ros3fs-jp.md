@@ -64,7 +64,7 @@ hoge
 
 ## 性能比較
 
-ローカルに[Apache Ozone](https://ozone.apache.org/)のサーバを構築し、1000 個のテキストファイルをバケットに格納してから、FUSE でマウントし`grep`で検索した時の性能を比較します。この性能比較は[compare_with_mountpoint-s3.sh](https://github.com/akawashiro/ros3fs/blob/master/compare_with_mountpoint-s3.sh)で行いました。なお、この性能比較では、キャッシュのウォームアップがあるため[ros3fs](https://github.com/akawashiro/ros3fs)にかなり有利なものです。
+ローカルに[Apache Ozone](https://ozone.apache.org/)のサーバを構築し、1000 個のテキストファイルをバケットに格納してから、FUSE でマウントし`grep`で検索した時の性能を比較します。この性能比較は[benchmark.sh](https://github.com/akawashiro/ros3fs/blob/master/benchmark.sh)で行いました。なお、この性能比較では、キャッシュのウォームアップがあるため[ros3fs](https://github.com/akawashiro/ros3fs)にかなり有利なものです。
 
 [ros3fs](https://github.com/akawashiro/ros3fs)はコミットハッシュ`afa6156e753539b7a530be9c7c25cdb987b5ffad`、[s3fs-fuse](https://github.com/s3fs-fuse/s3fs-fuse)は`V1.90`、[mountpoint-s3](https://github.com/awslabs/mountpoint-s3)は`v1.0.2`を使い、OS は`Ubuntu 22.04.2 LTS`、CPU は`AMD Ryzen 9 5950X`です。
 
@@ -74,10 +74,10 @@ hoge
 ./launch-ozone.sh
 ```
 
-次に別のターミナルで`./compare_with_mountpoint-s3.sh`を起動すると測定を行います。
+次に別のターミナルで`./benchmark.sh`を起動すると測定を行います。
 
 ```bash
-./compare_with_mountpoint-s3.sh
+./benchmark.sh
 # 省略
 ========== Compare grep performance without cache warmup ==========
 time grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/ros3fs_mountpoint -e 123
