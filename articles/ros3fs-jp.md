@@ -146,7 +146,7 @@ Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/m
 =========================================================
 ```
 
-</details>
+</div></details>
 
 ![grepを使ったバケット内のファイル内容の検索 (ms)](./grepを使ったバケット内のファイル内容の検索%20(ms).png)
 
