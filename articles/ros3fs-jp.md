@@ -153,6 +153,9 @@ Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/m
 小さすぎてグラフでは見えませんが、キャッシュのウォームアップを行った後のros3fsでは15.2 msでした。
 
 ![findを使ったバケット内のファイルの列挙](./ros3fs-find.png)
+
+キャッシュのウォームアップがあると[ros3fs](https://github.com/akawashiro/ros3fs)が圧倒的に高速に動作します。ローカルにすべてのデータを保存するためこの結果はごく自然です。
+
 ## まとめ
 
 S3 互換のオブジェクトストレージのための FUSE、[ros3fs](https://github.com/akawashiro/ros3fs)を実装しました。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新を反映しないという強い制約のもとではありますが、既存実装に比べて非常に高速なデータの閲覧が可能にしました。
