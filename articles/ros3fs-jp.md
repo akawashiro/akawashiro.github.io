@@ -76,7 +76,7 @@ hoge
 
 次に別のターミナルで`./benchmark.sh`を起動すると測定を行います。
 
-<details><summary>`./benchmark.sh` の実行結果の例</summary><div>
+<details><summary>`./benchmark.sh` の実行結果の例</summary>
 
 ```bash
 ./benchmark.sh
@@ -146,11 +146,11 @@ Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/m
 =========================================================
 ```
 
-</div></details>
+</details>
 
 ![grepを使ったバケット内のファイル内容の検索 (ms)](./grepを使ったバケット内のファイル内容の検索%20(ms).png)
 
-小さすぎてグラフでは見えませんが、キャッシュのウォームアップあるros3fsでは15.2 msでした。
+小さすぎてグラフでは見えませんが、キャッシュのウォームアップを行った後のros3fsでは15.2 msでした。
 
 ![findを使ったバケット内のファイルの列挙](./findを使ったバケット内のファイルの列挙(ms).png)
 ## まとめ
