@@ -1,11 +1,11 @@
 ---
-title: ros3fs - オブジェクトストレージ用の高速な FUSE
+title: ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム
 layout: default
 ---
 
-# ros3fs - オブジェクトストレージ用の高速な FUSE
+# ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム
 
-[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSE です。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。極端な例では既存実装に比べて 100~1000 倍の高速化を実現しました。
+[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSEファイルシステム です。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。
 
 ## オブジェクトストレージ
 
@@ -25,13 +25,13 @@ layout: default
 
 ## 既存の s3 向け FUSE の問題点
 
-S3 互換の API を持つオブジェクトストレージ向けの FUSE は AWS 本家による[mountpoint-s3](https://github.com/awslabs/mountpoint-s3)や[s3fs-fuse](https://github.com/s3fs-fuse/s3fs-fuse)などの既存実装があります。どちらを使っても問題なくオブジェクトストレージをファイルシステムとして利用することができます。
+S3 互換の API を持つオブジェクトストレージ向けの FUSEファイルシステム には AWS 本家による[mountpoint-s3](https://github.com/awslabs/mountpoint-s3)や[s3fs-fuse](https://github.com/s3fs-fuse/s3fs-fuse)などの既存実装があります。どちらを使っても問題なくオブジェクトストレージをファイルシステムとして利用することができます。
 
-しかし、この二つの実装にはどちらも**遅い**という問題点があります。特にディレクトリ構造を走査するような操作は遅く、オブジェクト数の多いバケットを FUSE でマウントして`ls`コマンドを打つと体感できる程度の遅延があります。これはおそらく、dエントリのようなディレクトリ構造を保持する専用のデータ構造がないオブジェクトストレージを、無理やりファイルシステムとして見せているために生じる遅延であり、根本的に解決することが困難な問題です。
+しかし、この二つの実装にはどちらも**遅い**という問題点があります。特にディレクトリ構造を走査するような操作は遅く、オブジェクト数の多いバケットを FUSEファイルシステム でマウントして`ls`コマンドを打つと体感できる程度の遅延があります。これはdエントリのようなディレクトリ構造を保持する専用のデータ構造がないオブジェクトストレージを、無理やりファイルシステムとして見せているために生じる遅延であり、根本的に解決することが困難な問題です。
 
 ## ros3fs
 
-この問題を回避して`ls`の遅延を最小化するために作ったのが[ros3fs](https://github.com/akawashiro/ros3fs)です。[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSE であり、ディレクトリ構造の走査を含む読み出しの遅延を最小化することを目的に設計されています。
+この問題を回避して`ls`の遅延を最小化するために作ったのが[ros3fs](https://github.com/akawashiro/ros3fs)です。[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSEファイルシステム であり、ディレクトリ構造の走査を含む読み出しの遅延を最小化することを目的に設計されています。
 
 Linux で[ros3fs](https://github.com/akawashiro/ros3fs)で使うにはビルドする必要があります。Ubuntu 22.04 で ros3fs をビルドする手順は以下の通りです。
 
@@ -58,13 +58,13 @@ hoge
 
 先ほど述べたように、[ros3fs](https://github.com/akawashiro/ros3fs)は読み出しの遅延を最小化することを目的に設計されています。その代償としていくつかの制限があります。まず書き込みはサポートしません。これは書き込みをサポートすると[ros3fs](https://github.com/akawashiro/ros3fs)のキャッシュとオブジェクトストレージの間の整合性をとるのが困難になるためです。
 
-また、[ros3fs](https://github.com/akawashiro/ros3fs)はバケットに存在するデータと異なる古いデータを読みだすことがあります。遅延を最小化するために[ros3fs](https://github.com/akawashiro/ros3fs)はデータを極端にキャッシュします。[ros3fs](https://github.com/akawashiro/ros3fs)は起動時にすべてのオブジェクト名を取得しディレクトリ構造を構築します。また、一度アクセスしたデータはローカルに保存し、二回目以降のアクセスではそのデータを読みます。このため、[ros3fs](https://github.com/akawashiro/ros3fs)でバケットをマウントした後にそのバケットのオブジェクトが変更された場合、その変更を読みだせないケースがあります。
+また、[ros3fs](https://github.com/akawashiro/ros3fs)はバケットに存在するデータと異なる古いデータを読みだすことがあります。遅延を最小化するために[ros3fs](https://github.com/akawashiro/ros3fs)はデータを極端にキャッシュします。まず、[ros3fs](https://github.com/akawashiro/ros3fs)は起動時にすべてのオブジェクト名を取得しディレクトリ構造を構築します。また、一度アクセスしたデータはローカルに保存し、二回目以降のアクセスではそのデータを読みます。このため、[ros3fs](https://github.com/akawashiro/ros3fs)でバケットをマウントした後にそのバケットのオブジェクトが変更された場合、その変更を読みだせないケースがあります。
 
 このような思い切った設計の背景には、筆者のオブジェクトストレージの使い方があります。筆者はオブジェクトストレージをバックアップデータの保存先として使っており、そのバケットの更新頻度は非常に低いです。一方、バックアップしたデータを参照する頻度は更新頻度に比べて高いです。このため、バケットをマウントした後オブジェクトを変更するケースをサポートしない判断をしました。この判断により、読み取りについてはほかの S3 向けの FUSE と比べて大幅に高速になっています。
 
 ## 性能比較
 
-ローカルに[Apache Ozone](https://ozone.apache.org/)のサーバを構築し、1000 個のテキストファイルをバケットに格納してから、FUSE でマウントし`grep`で検索した時の性能を比較します。この性能比較は[benchmark.sh](https://github.com/akawashiro/ros3fs/blob/master/benchmark.sh)で行いました。なお、この性能比較では、キャッシュのウォームアップがあるため[ros3fs](https://github.com/akawashiro/ros3fs)にかなり有利なものです。
+ローカルに[Apache Ozone](https://ozone.apache.org/)のサーバを構築し、1000 個のテキストファイルをバケットに格納してから、FUSEファイルシステム でマウントし`grep`で検索した時の性能を比較します。この性能比較は[benchmark.sh](https://github.com/akawashiro/ros3fs/blob/master/benchmark.sh)で行いました。
 
 [ros3fs](https://github.com/akawashiro/ros3fs)はコミットハッシュ`afa6156e753539b7a530be9c7c25cdb987b5ffad`、[s3fs-fuse](https://github.com/s3fs-fuse/s3fs-fuse)は`V1.90`、[mountpoint-s3](https://github.com/awslabs/mountpoint-s3)は`v1.0.2`を使い、OS は`Ubuntu 22.04.2 LTS`、CPU は`AMD Ryzen 9 5950X`です。
 
@@ -158,6 +158,6 @@ Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/m
 
 ## まとめ
 
-S3 互換のオブジェクトストレージのための FUSE、[ros3fs](https://github.com/akawashiro/ros3fs)を実装しました。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新を反映しないという強い制約のもとではありますが、既存実装に比べて非常に高速なデータの閲覧が可能にしました。
+S3 互換のオブジェクトストレージのための FUSEファイルシステム、[ros3fs](https://github.com/akawashiro/ros3fs)を実装しました。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新を反映しないという強い制約のもとではありますが、既存実装に比べて非常に高速なデータの閲覧が可能にしました。
 
-[^1]: Windows で FUSE を利用するのはあまり一般的ではないようです。[WinFsp](https://github.com/winfsp/winfsp)がありますが使ったことはありません。
+[^1]: Windows で FUSEファイルシステム を利用するのはあまり一般的ではないようです。[WinFsp](https://github.com/winfsp/winfsp)がありますが使ったことはありません。
