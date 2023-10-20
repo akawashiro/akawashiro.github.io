@@ -7,6 +7,8 @@ layout: default
 
 [ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSEファイルシステム です。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。
 
+![grepを使ったバケット内のファイル内容の検索 (ms)](./ros3fs-grep.png)
+
 ## オブジェクトストレージ
 
 [AWS S3](https://aws.amazon.com/s3/)や[Cloudflare R2](https://developers.cloudflare.com/r2/)、[MinIO](https://min.io/)、[Apache Ozone](https://ozone.apache.org/)などはオブジェクトストレージと呼ばれるソフトウェアです。オブジェクトストレージはスケーラビリティにすぐれており、[AWS S3](https://aws.amazon.com/s3/)や[Cloudflare R2](https://developers.cloudflare.com/r2/)などのクラウドサービスとして提供されている場合は手軽に安価に使い始めることができます。
@@ -161,3 +163,11 @@ Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/m
 S3 互換のオブジェクトストレージのための FUSEファイルシステム、[ros3fs](https://github.com/akawashiro/ros3fs)を実装しました。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新を反映しないという強い制約のもとではありますが、既存実装に比べて非常に高速なデータの閲覧が可能にしました。
 
 [^1]: Windows で FUSEファイルシステム を利用するのはあまり一般的ではないようです。[WinFsp](https://github.com/winfsp/winfsp)がありますが使ったことはありません。
+
+## お願い
+
+[https://github.com/akawashiro/ros3fs](https://github.com/akawashiro/ros3fs) をスターしてください。励みになります。
+
+## 連絡先
+
+この記事に誤りがあった場合は[Twitter](https://twitter.com/a_kawashiro)、[Mastodon](https://mstdn.jp/@a_kawashiro)等で連絡をください。修正します。その他の連絡先は [https://akawashiro.com/](https://akawashiro.com/) にあります。
