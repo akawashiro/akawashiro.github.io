@@ -5,9 +5,10 @@ layout: default
 
 # ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム
 
-[ros3fs](https://github.com/akawashiro/ros3fs)は S3 互換のオブジェクトストレージのための FUSEファイルシステム です。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。
+[ros3fs (Read Only S3 File System)](https://github.com/akawashiro/ros3fs)を作りました。 [ros3fs](https://github.com/akawashiro/ros3fs)はS3互換のオブジェクトストレージのためのFUSEファイルシステムです。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速にデータの閲覧を可能にしています。
 
 ![grepを使ったバケット内のファイル内容の検索 (ms)](./ros3fs-grep.png)
+(小さすぎてグラフでは見えませんが、キャッシュのウォームアップを行った後のros3fsでは15.2 msでした。)
 
 ## オブジェクトストレージ
 
@@ -20,6 +21,8 @@ layout: default
 ## FUSE
 
 このような問題を解決する一つの方法が[FUSE](https://www.kernel.org/doc/html/next/filesystems/fuse.html)です。[FUSE](https://www.kernel.org/doc/html/next/filesystems/fuse.html)とは Filesystem in Userspace の略であり、[Linux](https://github.com/libfuse/libfuse)、[Mac OS](https://osxfuse.github.io/)、Windows[^1]で利用できる技術です。
+
+[^1]: Windows で FUSEファイルシステム を利用するのはあまり一般的ではないようです。[WinFsp](https://github.com/winfsp/winfsp)がありますが使ったことはありません。
 
 [FUSE](https://www.kernel.org/doc/html/next/filesystems/fuse.html)を使うとファイルシステムをユーザ空間内に実装できます。このファイルシステムの実装を自由に書くことができるため、例えば`open`システムコールを AWS S3 の[GetObject API](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)に結び付けることで、ファイルを開く操作を自動的に S3 のオブジェクトを取得する操作に変換することができます。
 
@@ -158,11 +161,13 @@ Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/m
 
 キャッシュのウォームアップがあると[ros3fs](https://github.com/akawashiro/ros3fs)が圧倒的に高速に動作します。ローカルにすべてのデータを保存するためこの結果はごく自然です。
 
+## 今後の課題
+
+[ros3fs](https://github.com/akawashiro/ros3fs)の成熟度は僕が普段使いできる程度でしかなく、明らかな問題がいくつかあります。一つ目はエラーハンドリングの甘さです。ユーザ空間で動かし想定外の挙動をした場合はエラーメッセージを出してすぐに終了するようになっています。特に、S3 APIのエラーが返ってきた場合は何もせずに終了していますが、本来はエラーコードを見て適切にハンドリングする必要があります。二つ目はキャッシュの容量制限です。[ros3fs](https://github.com/akawashiro/ros3fs)は一度アクセスしたオブジェクトをローカルにキャッシュとして保存しますが、このキャッシュに容量制限がありません。一定時間ごとにキャッシュをクリアする機能はありますが、容量制限をかけて最もアクセス日時が古いものを削除するような機能が必要です。
+
 ## まとめ
 
 S3 互換のオブジェクトストレージのための FUSEファイルシステム、[ros3fs](https://github.com/akawashiro/ros3fs)を実装しました。[ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新を反映しないという強い制約のもとではありますが、既存実装に比べて非常に高速なデータの閲覧が可能にしました。
-
-[^1]: Windows で FUSEファイルシステム を利用するのはあまり一般的ではないようです。[WinFsp](https://github.com/winfsp/winfsp)がありますが使ったことはありません。
 
 ## お願い
 
