@@ -8,7 +8,8 @@ layout: default
 S3互換のオブジェクトストレージのためのFUSEファイルシステム、[ros3fs (Read Only S3 File System)](https://github.com/akawashiro/ros3fs)を作りました。 [ros3fs](https://github.com/akawashiro/ros3fs)は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速なデータの閲覧を可能にしています。
 
 ![grepを使ったバケット内のファイル内容の検索 (ms)](./ros3fs-grep.png)
-(小さすぎてグラフでは見えませんが、キャッシュのウォームアップを行った後のros3fsでは15.2 msでした。)
+
+(小さすぎてグラフでは見えませんが、キャッシュのウォームアップありのros3fsでは15.2 msでした。)
 
 ## オブジェクトストレージ
 
@@ -51,7 +52,7 @@ $ cmake --build build -- -j
 $ cmake --build build -- install
 ```
 
-その後、このコマンドで S3 互換のオブジェクトストレージをマウントできます。マウントした後は`<MOUNTPOINT>`ディレクトリにオブジェクトストレージのデータがマウントされています。`ls`や`cat`などのコマンドを使って中身を確認することも可能です。
+その後、このコマンドで S3 互換のオブジェクトストレージをマウントできます。AWS SDKを使っているため`AWS_ACCESS_KEY_ID`や`AWS_SECRET_ACCESS_KEY`で認証情報を設定できます。マウントした後は`<MOUNTPOINT>`ディレクトリにオブジェクトストレージのデータがマウントされています。`ls`や`cat`などのコマンドを使って中身を確認することも可能です。
 
 ```bash
 $ ./build/ros3fs <MOUNTPOINT> -f -d --endpoint=<ENDPOINT URL> --bucket_name=<BUCKET NAME ENDS WITH '/'> --cache_dir=<CACHE DIRECTORY>
@@ -155,7 +156,7 @@ Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/m
 
 ![grepを使ったバケット内のファイル内容の検索 (ms)](./ros3fs-grep.png)
 
-小さすぎてグラフでは見えませんが、キャッシュのウォームアップを行った後のros3fsでは15.2 msでした。
+小さすぎてグラフでは見えませんが、キャッシュのウォームアップありのros3fsでは15.2 msでした。
 
 ![findを使ったバケット内のファイルの列挙](./ros3fs-find.png)
 
