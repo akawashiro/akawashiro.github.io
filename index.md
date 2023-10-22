@@ -36,11 +36,11 @@ layout: default
 
 ## Articles
 
-- [ros3fs - 高速なオブジェクトストレージ用の FUSE](./articles/ros3fs-jp)
-- [Linux のローダを自作する](https://zenn.dev/a_kawashiro/articles/506a224d206418)
-- [Linux におけるデバイスファイルの仕組み](https://zenn.dev/a_kawashiro/articles/387fa97163dd66)
-- [jendeley - JSON ベースの文書管理ソフトウェア](https://zenn.dev/a_kawashiro/articles/a2170f967f9508)
-- [Linux kernel をソースコードからビルド、インストールするシェルスクリプトを書いた](./articles/linux-build-script.html)
+- [ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム (in Japanese)](./articles/ros3fs-jp)
+- [Linux のローダを自作する (in Japanese)](https://zenn.dev/a_kawashiro/articles/506a224d206418) / [Alternative Linux loader (in English)](https://akawashiro.com/articles/sloader-succeeded-self-build-en)
+- [Linux におけるデバイスファイルの仕組み (in Japanese)](https://zenn.dev/a_kawashiro/articles/387fa97163dd66)
+- [jendeley - JSON ベースの文書管理ソフトウェア (in Japanese)](https://zenn.dev/a_kawashiro/articles/a2170f967f9508) / [jendeley - a JSON-based document organizing software (in English)](https://akawashiro.github.io/jendeley/)
+- [Linux kernel をソースコードからビルド、インストールするシェルスクリプトを書いた (in Japanese)](./articles/linux-build-script.html)
 - [LD_AUDIT and Global Offset Table (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2022/01/08/220526)
 - [What is GNU_IFUNC? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2021/11/07/100540)
 - [What and how does libc save information into jmp_buf used in setjmp and longjmp? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2020/12/31/184339)
@@ -84,53 +84,42 @@ layout: default
 
 ## Software and Hardware
 
-- ros3fs
+- [ros3fs](https://github.com/akawashiro/ros3fs)
   - ros3fs, Read Only S3 File System, is a Linux FUSE adapter for AWS S3 and S3 compatible object storage such as Apache Ozone. ros3fs focuses on speed, only speed.
-  - [Repository](https://github.com/akawashiro/ros3fs)
-- sloader
+- [sloader](https://github.com/akawashiro/sloader)
   - `sloader` is an ELF loader that aims to replace `ld-linux.so.2` of `glibc`.
   - [Introduction article (in Japanese)](https://zenn.dev/a_kawashiro/articles/506a224d206418)
   - [Introduction article (in English)](https://akawashiro.github.io/articles/sloader-succeeded-self-build-en)
-  - [Repository](https://github.com/akawashiro/sloader)
-- jendeley
+- [jendeley](https://github.com/akawashiro/jendeley)
   - jendeley is a JSON based document organizing software.
   - [Document](https://akawashiro.github.io/jendeley/)
-  - [Repository](https://github.com/akawashiro/jendeley)
   - [Introduction article (in Japanese)](https://zenn.dev/a_kawashiro/articles/a2170f967f9508)
   - [Introduction slides (in Japanese)](./jendeley-KMC-reikai-slide.pdf)
-- z3shape
+- [z3shape](https://github.com/akawashiro/z3shape)
   - z3shape infer shapes in ONNX file using Z3 SMT solver.
-  - [Repository](https://github.com/akawashiro/z3shape)
-- sold
+- [sold](https://github.com/akawashiro/sold)
   - sold is a linker software which links depending shared objects to a binary or a shared object.
-  - [Repository](https://github.com/akawashiro/sold)
   - [Presentation in kernelvm (in Japanese)](./sold_kernelvm_20211120.pdf)
   - [Demo](https://www.youtube.com/watch?v=f6EMyVrq3jo)
-- kearch
+- [kearch](https://github.com/kearch/kearch)
   - kearch is a distributed search engine made from scratch. There are two type of search engine -- specialized and meta. A meta search engine takes query from uses and distribute it to appropriate
     specialized search engine.
-  - [Repository](https://github.com/kearch/kearch)
   - [Final presenation of MITOU project (in Japanese)](kearchFinalPresentation.pdf)
   - [Demo movie in the final presenation (in Japanese)](https://youtu.be/tErMAEk8wLQ)
 - typed-egison
   - typed-egison is a type checker for Egison programming language. I designed all typing rules for Egison and make type inferencer for Egison with Haskell. You can use it from interpreter.
   - [Repository](https://github.com/egison/typed-egison)
-- wavplayer
+- [wavplayer](https://github.com/akawashiro/wavplayer)
   - wavplayer is a mini music player using ATMEGA168 and SD card. I wrote FAT16 file system for ATMEGA168. Musics are stored in wav files in the root directory.
-  - [Repository](https://github.com/akawashiro/wavplayer)
-- cropass
+- [cropass](https://github.com/akawashiro/cropass)
   - cropass is a password manager written in Go. I wrote this to use myself.
     You can generate, add and lookup password records.
-  - [Repository](https://github.com/akawashiro/cropass)
-- hinvader
+- [hinvader](https://github.com/akawashiro/hinvader)
   - hinvader is a simple invader like game wirtten in Haskell. I used GLUT to reder the screen.
-  - [Repository](https://github.com/akawashiro/hinvader)
-- ml2wasm
+- [ml2wasm](https://github.com/akawashiro/ml2wasm)
   - ml2wasm is a compiler from ML like language (MinCaml) to WebAssembly.
-  - [Repository](https://github.com/akawashiro/ml2wasm)
-- N-body-simulation
+- [N-body-simulation](https://github.com/akawashiro/N-body-simulation)
   - N-body-simulation is a toy n-body simulator.
-  - [Repository](https://github.com/akawashiro/N-body-simulation)
 
 ## GPG Public Key
 
