@@ -36,6 +36,7 @@ layout: default
 
 ## Articles
 
+- [MN-Coreランタイム – MN-Coreを動かすソフトウェア (in Japanese)](https://tech.preferred.jp/ja/blog/mncore-runtime-1/) / [MN-Core runtime – software which runs MN-Core](https://tech.preferred.jp/en/blog/mncore-runtime-1/)
 - [ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム (in Japanese)](./articles/ros3fs-jp)
 - [Linux のローダを自作する (in Japanese)](https://zenn.dev/a_kawashiro/articles/506a224d206418) / [Alternative Linux loader (in English)](https://akawashiro.com/articles/sloader-succeeded-self-build-en)
 - [Linux におけるデバイスファイルの仕組み (in Japanese)](https://zenn.dev/a_kawashiro/articles/387fa97163dd66) / [How device file in Linux works (in English)](./articles/how-device-file-in-linux-works)
