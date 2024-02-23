@@ -124,7 +124,7 @@ layout: default
 ## GPG Public Key
 
 - Fingure print: 3FB4269CA58D57F0326C1F7488737135568C1AC5
-- [Public key file](9804D984406FEE5605D5CB82A8DEC03E3DF3BDAD.html)
+- [Public key file](3FB4269CA58D57F0326C1F7488737135568C1AC5.html)
 
 ## Current status
 
