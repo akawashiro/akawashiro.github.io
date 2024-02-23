@@ -36,15 +36,16 @@ layout: default
 
 ## Articles
 
+- [MN-Coreランタイム – MN-Coreを動かすソフトウェア (in Japanese)](https://tech.preferred.jp/ja/blog/mncore-runtime-1/) / [MN-Core runtime – software which runs MN-Core](https://tech.preferred.jp/en/blog/mncore-runtime-1/)
 - [ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム (in Japanese)](./articles/ros3fs-jp)
 - [Linux のローダを自作する (in Japanese)](https://zenn.dev/a_kawashiro/articles/506a224d206418) / [Alternative Linux loader (in English)](https://akawashiro.com/articles/sloader-succeeded-self-build-en)
-- [Linux におけるデバイスファイルの仕組み (in Japanese)](https://zenn.dev/a_kawashiro/articles/387fa97163dd66)
+- [Linux におけるデバイスファイルの仕組み (in Japanese)](https://zenn.dev/a_kawashiro/articles/387fa97163dd66) / [How device file in Linux works (in English)](./articles/how-device-file-in-linux-works)
 - [jendeley - JSON ベースの文書管理ソフトウェア (in Japanese)](https://zenn.dev/a_kawashiro/articles/a2170f967f9508) / [jendeley - a JSON-based document organizing software (in English)](https://akawashiro.github.io/jendeley/)
 - [Linux kernel をソースコードからビルド、インストールするシェルスクリプトを書いた (in Japanese)](./articles/linux-build-script.html)
 - [LD_AUDIT and Global Offset Table (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2022/01/08/220526)
 - [What is GNU_IFUNC? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2021/11/07/100540)
 - [What and how does libc save information into jmp_buf used in setjmp and longjmp? (in Japanese)](https://a-kawashiro.hatenablog.com/entry/2020/12/31/184339)
-- [JAX から MN-Core を利用する](https://tech.preferred.jp/ja/blog/jax-on-mncore/)
+- [JAX から MN-Core を利用する (in Japanese)](https://tech.preferred.jp/ja/blog/jax-on-mncore/)
   - As the main mentor, I made the prototype of XLA to ONNX converter and support Maekawa-san during intern.
 
 ## Publication

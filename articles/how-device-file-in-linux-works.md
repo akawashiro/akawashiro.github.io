@@ -1,3 +1,8 @@
+---
+title: How device file in Linux works
+layout: default
+---
+
 # How device file in Linux works <!-- omit in toc -->
 
 A device file in Linux is an interface for various devices in the form of files. Although we can read and write a device file just the same as a normal file, read and write requests to device control requests by device file mechanism.
