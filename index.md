@@ -3,20 +3,6 @@ title: Akira Kawata
 layout: default
 ---
 
-## Table of Contents <!-- omit in toc -->
-
-- [Interests](#interests)
-- [Links](#links)
-- [Articles](#articles)
-- [Publication](#publication)
-- [Activities](#activities)
-- [Work Experience](#work-experience)
-- [Software and Hardware](#software-and-hardware)
-- [GPG Public Key](#gpg-public-key)
-- [Current status](#current-status)
-  - [Mastodon](#mastodon)
-  - [X(twitter)](#xtwitter)
-
 ## Interests
 
 - Executable and Linkable Format of Linux
@@ -134,3 +120,7 @@ layout: default
 ### Mastodon
 
 <iframe allowfullscreen sandbox="allow-top-navigation allow-scripts allow-popups allow-popups-to-escape-sandbox" width="400" height="800" src="https://mastofeed.com/apiv2/feed?userurl=https%3A%2F%2Fmstdn.jp%2Fusers%2Fa_kawashiro&theme=dark&size=100&header=true&replies=false&boosts=false"></iframe>
+
+### Misskey
+
+<iframe src='https://missbed.misskey.stream/timeline/misskey.io/9ho4x8czws' width="400" height="800"/>
