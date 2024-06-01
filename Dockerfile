@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as builder
+FROM ubuntu:24.04 as builder
 
 RUN apt update
 RUN apt-get install -y \
@@ -8,8 +8,8 @@ RUN apt-get install -y \
     build-essential \
     ruby-dev \
     nginx
-COPY . /akawashiro.github.io
 RUN gem install jekyll bundler
+COPY . /akawashiro.github.io
 WORKDIR /akawashiro.github.io
 RUN bundle update
 RUN bundle install
