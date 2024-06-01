@@ -80,8 +80,10 @@ layout: default
 
 ## Work Experience
 
-- Software engineer, Japan, Preferred Networks, April 2020
+- Software engineer, Japan, Preferred Networks, April 2020 - now
+  - Working on MN-Core compiler and runtime.
 - Internship, Japan, Rakuten Institute of Technology, March 2018 - April 2018
+  - Working on the development and implementation of type system for [Egison programming language](https://www.egison.org/).
 
 ## Software and Hardware
 
