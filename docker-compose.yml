@@ -1,8 +1,0 @@
-services:
-  nginx:
-    image: akawashiro_site
-    ports:
-      - 80:80
-      - 443:443
-    environment:
-      - TZ=Asia/Tokyo
