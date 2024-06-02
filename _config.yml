@@ -54,3 +54,4 @@ plugins:
 exclude:
   - run.sh
   - README.md
+  - gen_markdown_from_mastodon_archive.py
