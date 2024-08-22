@@ -3,6 +3,7 @@ title: Binary Hacks Rebooted 目次
 layout: default
 ---
 
+# Binary Hacks Rebooted 目次
 * 本書に寄せて
 * クレジット
 * はじめに
