@@ -1,3 +1,8 @@
+---
+title: 『Binary Hacks Rebooted』に込めた思い
+layout: default
+---
+
 # 『Binary Hacks Rebooted』に込めた思い
 
 ## はじめに
