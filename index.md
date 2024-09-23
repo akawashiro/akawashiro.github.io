@@ -36,6 +36,8 @@ layout: default
 
 ## Publication
 
+- [夏のプログラミング・シンポジウム 2024](https://prosym.org/sprosym2024/)
+  - [実行ファイルのスペースにホワイトスペースを入れる](https://docs.google.com/presentation/d/1dNYOtYc7xz1GSW5NwhiZ6KXhbJnpGBLBZW5lhI8shcw/edit#slide=id.g2ff84a965c3_0_119)
 - [Kernel/VM 探検隊@東京 No16](https://kernelvm.connpass.com/event/287261/)
   - Talk on sloader
   - [Slide: 自作ローダのための libc 初期化ハック](https://akawashiro.github.io/sloader-libc-hacks.pdf)
@@ -122,3 +124,7 @@ layout: default
 <iframe allowfullscreen sandbox="allow-top-navigation allow-scripts allow-popups allow-popups-to-escape-sandbox" width="600" height="400" src="https://mastofeed.com/apiv2/feed?userurl=https%3A%2F%2Fmstdn.jp%2Fusers%2Fa_kawashiro&theme=dark&size=100&header=true&replies=false&boosts=false"></iframe>
 
 [Link to the toot archive](./mastodon_archive.html)
+
+## My icon
+
+- [atmega168](./atmega168.jpg)
