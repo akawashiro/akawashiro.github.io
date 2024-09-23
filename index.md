@@ -20,6 +20,10 @@ layout: default
 - [keybase](https://keybase.io/a_kawashiro)
 - [Zenn](https://zenn.dev/a_kawashiro)
 
+## Books
+
+- [Binary Hacks Rebooted―低レイヤの世界を探検するテクニック89選](https://www.oreilly.co.jp/books/9784814400850/)
+
 ## Articles
 
 - [MN-Coreランタイム – MN-Coreを動かすソフトウェア (in Japanese)](https://tech.preferred.jp/ja/blog/mncore-runtime-1/) / [MN-Core runtime – software which runs MN-Core](https://tech.preferred.jp/en/blog/mncore-runtime-1/)
