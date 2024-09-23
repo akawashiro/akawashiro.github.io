@@ -22,7 +22,7 @@ layout: default
 
 ## Books
 
-- [ Binary Hacks Rebooted―低レイヤの世界を探検するテクニック89選](https://www.oreilly.co.jp/books/9784814400850/)
+- [Binary Hacks Rebooted―低レイヤの世界を探検するテクニック89選](https://www.oreilly.co.jp/books/9784814400850/)
 
 ## Articles
 
