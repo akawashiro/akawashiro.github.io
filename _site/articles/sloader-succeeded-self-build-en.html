@@ -1,0 +1,120 @@
+<h1 id="alternative-linux-loader-">Alternative Linux loader <!-- omit in toc --></h1>
+
+<p>In order to fully understand the behavior of the standard Linux loader, <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>, I am developping a complete replacement for <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> <a href="https://github.com/akawashiro/sloader">https://github.com/akawashiro/sloader</a> for about two years and now it can launch all softwares t obuild sloader itself and some GUI applications.</p>
+
+<h2 id="table-of-contents-">Table of contents <!-- omit in toc --></h2>
+
+<ul>
+  <li><a href="#what-is-a-loader">What is a loader</a></li>
+  <li><a href="#problems-of-ld-linux-x86-64so2">Problems of <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code></a></li>
+  <li><a href="#sloader-an-alternative-linux-loader">sloader: an alternative Linux loader</a></li>
+  <li><a href="#current-status-of-sloader">Current status of sloader</a></li>
+  <li><a href="#implementation-of-sloader">Implementation of sloader</a>
+    <ul>
+      <li><a href="#resolution-of-symbols-in-libcso">Resolution of symbols in libc.so</a></li>
+      <li><a href="#secure-tls-space-for-a-loaderd-program">Secure TLS space for a loaderd program</a></li>
+    </ul>
+  </li>
+  <li><a href="#current-problems-of-sloader">Current problems of sloader</a></li>
+  <li><a href="#support-me">Support me</a></li>
+</ul>
+
+<h2 id="what-is-a-loader">What is a loader</h2>
+
+<p>When you execute an executable binary file in Linux using <a href="https://man7.org/linux/man-pages/man2/execve.2.html">execve(2)</a>, There are two execution paths.</p>
+
+<ul>
+  <li>The Linux kernel directly loads the binary file into memory space.</li>
+  <li>The loader<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup> specified by the binary file loads it into memory space.</li>
+</ul>
+
+<p>You can look at the <code class="language-plaintext highlighter-rouge">PT_INTERP</code> segment of the binary file with <code class="language-plaintext highlighter-rouge">readelf -l</code> to see in which way the binary file is loaded . In most cases, it will say <code class="language-plaintext highlighter-rouge">Requesting program interpreter: /lib64/ld-linux-x86-64.so.2</code>, which means <code class="language-plaintext highlighter-rouge">/lib64/ld-linux-x86-64.so.2</code> will load the binary file into memory space.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; readelf -l $(which nvim) | grep INTERP -A 2
+  INTERP         0x0000000000000318 0x0000000000000318 0x0000000000000318
+                 0x000000000000001c 0x000000000000001c  R      0x1
+      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> performs three processes when loading a binary file</p>
+
+<ul>
+  <li>Searches for shared libraries required by the binary</li>
+  <li>Loads shared libraries and binaries into memory space</li>
+  <li>Resolves symbols in shared libraries and binaries</li>
+</ul>
+
+<p>It is important to understand the exact behavior of <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>. For example, useful hacks with environment variables such as LD_PRELOAD and LD_AUDIT are achieved by changing their behavior. If you understand the behavior of <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>, you will be able to guess what is and is not possible with these environment variables. Also, that understanding is essential for producing hacky software like <a href="https://github.com/akawashiro/sold">https://github.com/akawashiro/sold</a>, which links dynamically linked libraries statically.</p>
+
+<h2 id="problems-of-ld-linux-x86-64so2">Problems of <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code></h2>
+
+<p><code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> is installed on Linux as part of glibc, and all of its source code is <a href="https://www.gnu.org/software/libc/sources.html">publicly available</a>. However, there are two problems in understanding the behavior of <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> from the publicly available source code.</p>
+
+<p>The first problem is that glibc source code is difficult to read. glibc is also required to be portable to multiple architectures such as x86-64, ARM, SPARC, etc. For this reason, macros are used extensively throughout the source code, making it difficult to follow the program flow.</p>
+
+<p>The second problem is <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> initialize <code class="language-plaintext highlighter-rouge">libc.so</code> simultaneously when it loads a program. Because of this, We cannot understand the loading process separating from the initialization of <code class="language-plaintext highlighter-rouge">libc.so</code>. <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> and <code class="language-plaintext highlighter-rouge">libc.so</code> are included in the same source code tree, and their boundary is very ambiguous.</p>
+
+<h2 id="sloader-an-alternative-linux-loader">sloader: an alternative Linux loader</h2>
+
+<p>I have decided to develop a new loader that can replace <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> to solve the problem described above and understand the behavior of <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>. In other words, I am trying to load all programs (<code class="language-plaintext highlighter-rouge">systemd</code>, <code class="language-plaintext highlighter-rouge">cat</code>, <code class="language-plaintext highlighter-rouge">find</code>, <code class="language-plaintext highlighter-rouge">firefox</code>, etc.) that run on Linux by my new loader.</p>
+
+<p>The name of this loader is <code class="language-plaintext highlighter-rouge">sloader</code> and the repository is located at <a href="https://github.com/akawashiro/sloader/">https://github.com/akawashiro/sloader/</a>. The development of <code class="language-plaintext highlighter-rouge">sloader</code> is based on the following two principles.</p>
+
+<p>The first principle is to use modern C++ instead of C. I am trying to increase readability by using modern C++ features up to C++20. I decided that a language compatible with the C language would be better, although I wanted to use Rust to develop my new loader.</p>
+
+<p>The second principle is not to initialize <code class="language-plaintext highlighter-rouge">libc.so</code>. The goal is to understand only the load part, so I will not do the complex and mysterious initialization of <code class="language-plaintext highlighter-rouge">libc.so</code>. In fact, I couldn’t do it. I will explain later how to load a program that depends on <code class="language-plaintext highlighter-rouge">libc.so</code> while skipping the initialization of <code class="language-plaintext highlighter-rouge">libc.so</code>.</p>
+
+<h2 id="current-status-of-sloader">Current status of sloader</h2>
+
+<p><code class="language-plaintext highlighter-rouge">sloader</code> is not yet ready to fully replace <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>. However, it works in some extent, and it is possible to run all the software needed to build <code class="language-plaintext highlighter-rouge">sloader</code>. It means that <code class="language-plaintext highlighter-rouge">sloader</code> can load <code class="language-plaintext highlighter-rouge">cmake</code>, <code class="language-plaintext highlighter-rouge">g++</code>, <code class="language-plaintext highlighter-rouge">ld</code>, and <code class="language-plaintext highlighter-rouge">ninja</code> to generate <code class="language-plaintext highlighter-rouge">sloader</code> itself binary file.</p>
+
+<p><a href="https://github.com/akawashiro/sloader/blob/master/make-sloader-itself.sh">https://github.com/akawashiro/sloader/blob/master/make-sloader-itself.sh</a> actually generates the <code class="language-plaintext highlighter-rouge">sloader</code> binary using <code class="language-plaintext highlighter-rouge">sloader</code>. I show the main part below.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sloader cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S . -B build \
+    -D CMAKE_C_COMPILER_LAUNCHER=sloader  -D CMAKE_CXX_COMPILER_LAUNCHER=sloader \
+    -D CMAKE_C_LINKER_LAUNCHER=sloader -D CMAKE_CXX_LINKER_LAUNCHER=sloader
+$ sloader make VERBOSE=1
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">sloader</code> also successfully launches several GUI applications. This image is a screenshou of launching <code class="language-plaintext highlighter-rouge">xeyes</code>, <code class="language-plaintext highlighter-rouge">xconsole</code>, and <code class="language-plaintext highlighter-rouge">xcalc</code> using <code class="language-plaintext highlighter-rouge">sloader</code>. <code class="language-plaintext highlighter-rouge">xeyes</code> originally displays circular eyes instead of hexagons, but due to some bug in <code class="language-plaintext highlighter-rouge">sloader</code>, eyes are hexagons.
+<img src="./xapps-launched-by-sloader.png" alt="launch GUI application using `sloader`" /></p>
+
+<h2 id="implementation-of-sloader">Implementation of sloader</h2>
+
+<h3 id="resolution-of-symbols-in-libcso">Resolution of symbols in libc.so</h3>
+
+<p>As mentioned earlier, <code class="language-plaintext highlighter-rouge">sloader</code> aims to replace <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>. Naturally, the programs I want to load with <code class="language-plaintext highlighter-rouge">sloader</code> depend on <code class="language-plaintext highlighter-rouge">libc.so</code>. On the other hand, it does not load <code class="language-plaintext highlighter-rouge">libc.so</code>.</p>
+
+<p><code class="language-plaintext highlighter-rouge">sloader</code> resolves this problem by using <code class="language-plaintext highlighter-rouge">libc.so</code> linked to <code class="language-plaintext highlighter-rouge">sloader</code> itself. When <code class="language-plaintext highlighter-rouge">sloader</code> finds a relocation information pointing to symbols in <code class="language-plaintext highlighter-rouge">libc.so</code>, <code class="language-plaintext highlighter-rouge">sloader</code> resolves it in an unusual way. Specifically, in <a href="https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/dyn_loader.cc#L621">dyn_loader.cc#L621</a>, when the symbol name in <code class="language-plaintext highlighter-rouge">R_X86_64_GLOB_DAT</code> or <code class="language-plaintext highlighter-rouge">R_X86_64_JUMP_SLOT</code> is from libc, <code class="language-plaintext highlighter-rouge">sloader</code> resolves the relocation to <a href="https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/libc_mapping.cc#L248">std::map&lt;std::string, Elf64_Addr&gt; function in sloader_libc_map</a>.</p>
+
+<h3 id="secure-tls-space-for-a-loaderd-program">Secure TLS space for a loaderd program</h3>
+
+<p>As described in <a href="#resolution-of-symbols-in-libcso">above</a>, programs loaded with <code class="language-plaintext highlighter-rouge">sloader</code> use the <code class="language-plaintext highlighter-rouge">libc.so</code> linked to <code class="language-plaintext highlighter-rouge">sloader</code> itself, but there is another problem with this approach: when the loaded program accesses the Thread Local Storage (TLS) variable, it accesses the <code class="language-plaintext highlighter-rouge">sloader</code>’s own TLS area.</p>
+
+<p>This problem is worked around by reserving a dummy TLS area in the <code class="language-plaintext highlighter-rouge">sloader</code>’s own TLS area. <a href="https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/tls_secure.cc#L4">tls_secure.cc#L4</a> of 4096 bytes. dummy TLS area is defined at the beginning of the TLS area, and the loaded program refers to this area.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>constexpr int TLS_SPACE_FOR_LOADEE = 4096;
+thread_local unsigned char sloader_dummy_to_secure_tls_space[TLS_SPACE_FOR_LOADEE] = {0, 0, 0, 0};
+</code></pre></div></div>
+
+<p>This seems to be the end of the matter, but there is still a problem. The problem is that we cannot define a dummy TLS area at the beginning of a TLS area in the usual way. Currently, I secure the space by linking <code class="language-plaintext highlighter-rouge">tls_secure.o</code> at the last argument to the linker in <a href="https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/CMakeLists.txt#L32">CMakeLists.txt#L32</a>, but this method depends on the linker implementation. To make matters worse, this last-linking method does not work when <code class="language-plaintext highlighter-rouge">libc.a</code> is statically linked. This makes it very embarrassing that <code class="language-plaintext highlighter-rouge">sloader</code> now requires <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> to start.</p>
+
+<h2 id="current-problems-of-sloader">Current problems of sloader</h2>
+
+<p>First, as mentioned <a href="#secure-tls-space-for-a-loaderd-program">above</a>, it is not possible to start <code class="language-plaintext highlighter-rouge">sloader</code> without <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>. This problem should be solved by replacing the last-linking hack that allocates the TLS dummy area with another one, or by improving this hack using the linker script.</p>
+
+<p>Next, <code class="language-plaintext highlighter-rouge">sloader</code> cannot load a lot of software such as <code class="language-plaintext highlighter-rouge">neovim</code> and <code class="language-plaintext highlighter-rouge">firefox</code>, which they cause Segmentation Faults. The reason of this is still unknown.</p>
+
+<p>Finally, the <code class="language-plaintext highlighter-rouge">sloader</code> relocation process is slow. It takes more than a second to launch larger programs such as <code class="language-plaintext highlighter-rouge">firefox</code>. However, this is simply a performance issue and should be resolved by taking profiles and improving using their results.</p>
+
+<h2 id="support-me">Support me</h2>
+
+<p>Please star <a href="https://github.com/akawashiro/sloader">https://github.com/akawashiro/sloader</a>.</p>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>A loader is sometimes called a “dynamic linker”, but this article is unified by “loader”. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Binary Hacks Rebooted 目次 | Akira Kawata</title>
+<meta name="generator" content="Jekyll v4.3.4" />
+<meta property="og:title" content="Binary Hacks Rebooted 目次" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="/articles/Binary_Hacks_Rebooted_toc.html" />
+<meta property="og:url" content="/articles/Binary_Hacks_Rebooted_toc.html" />
+<meta property="og:site_name" content="Akira Kawata" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Binary Hacks Rebooted 目次" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"Binary Hacks Rebooted 目次","url":"/articles/Binary_Hacks_Rebooted_toc.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Akira Kawata" /></head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Akira Kawata</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+      </nav></div>
+</header>
+
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <h1 id="binary-hacks-rebooted-目次">Binary Hacks Rebooted 目次</h1>
+<ul>
+  <li>本書に寄せて</li>
+  <li>クレジット</li>
+  <li>はじめに</li>
+  <li>1章 イントロダクション
+    <ul>
+      <li>#1 未知のバイナリの読み方
+        <ul>
+          <li>fileコマンド：ファイル形式を特定する</li>
+          <li>人力fileコマンドのやり方</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#2 アセンブリ入門
+        <ul>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#3 Hello, World!再訪
+        <ul>
+          <li>libcのシステムコールのラッパを使ったHello, World!</li>
+          <li>アセンブリ言語でのHello, World!</li>
+          <li>ELF HackのためのHello, World!</li>
+          <li>動的命令生成を使ったHello, World!</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>2章 ELF Hack
+    <ul>
+      <li>#4 ELFファイルのセグメント
+        <ul>
+          <li>PT_INTERP</li>
+          <li>PT_LOAD</li>
+          <li>PT_DYNAMIC</li>
+          <li>PT_NOTEとPT_GNU_PROPERTY</li>
+          <li>PT_TLS</li>
+          <li>PT_GNU_EH_FRAME</li>
+          <li>PT_GNU_STACK</li>
+          <li>PT_GNU_RELRO</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#5 ld-linux.soの環境変数を利用する
+        <ul>
+          <li>LD_PRELOAD</li>
+          <li>LD_DEBUG</li>
+          <li>LD_AUDIT</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#6 共有ライブラリを検索するディレクトリ
+        <ul>
+          <li>共有ライブラリの検索の実例</li>
+          <li>ダイナミックリンカが共有ライブラリを検索するディレクトリ</li>
+          <li>セキュリティ実行モード</li>
+          <li>DT_RUNPATH</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#7 dlopenによるライブラリの実行時ロードとその応用テクニック
+        <ul>
+          <li>dlopenとdlsym</li>
+          <li>dlopen、dlsymを使ってみる</li>
+          <li>応用：既存のライブラリ関数をラップする</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#8 IFUNCを使って実行時に実装を切り替える
+        <ul>
+          <li>IFUNCの使用例</li>
+          <li>IFUNCのresolver functionが呼ばれるタイミング</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#9 ELFのハッシュテーブルのしくみ
+        <ul>
+          <li>DT_HASH</li>
+          <li>DT_GNU_HASH</li>
+          <li>2つのハッシュテーブルの比較</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#10 TLSのしくみを理解する
+        <ul>
+          <li>TLSアクセスモデル</li>
+          <li>各アクセスモデルの実際の動作</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#11 コアファイルを読む
+        <ul>
+          <li>コアファイルの構造</li>
+          <li>コアファイルの解析</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#12 補助ベクトルを使ってプロセスに情報を渡す
+        <ul>
+          <li>補助ベクトルの利用</li>
+          <li>補助ベクトルがプロセスに渡されるしくみ</li>
+          <li>参考文献</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#13 静的リンクとASLRの関係
+        <ul>
+          <li>静的リンクされたアプリケーションの作り方</li>
+          <li>静的リンクとASLR</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#14 soldを使って依存する共有ライブラリを後からリンクする
+        <ul>
+          <li>soldの使い方</li>
+          <li>soldのしくみ</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#15 glibcをHackする
+        <ul>
+          <li>glibcのソースコードを読む</li>
+          <li>glibcにパッチを当てる</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#16 patchelfでELFバイナリのフィールドを書き換える
+        <ul>
+          <li>PT_INTERPの編集</li>
+          <li>DT_RUNPATHの編集</li>
+          <li>参考文献</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#17 LIEFを使ってELFバイナリを書き換える
+        <ul>
+          <li>シンボルのリネーム</li>
+          <li>関数の差し替え</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#18 PT_NOTEを利用したバイナリパッチ
+        <ul>
+          <li>PT_NOTEタイプのプログラムヘッダの書き換え</li>
+          <li>参考文献</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#19 DWARF Expressionを実行する：DWARFⅠ
+        <ul>
+          <li>DWARFについて</li>
+          <li>四則演算用のひな型の準備</li>
+          <li>DWARF Expressionが実行できることの確認</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#20 DWARFで数式を評価する：DWARFⅡ
+        <ul>
+          <li>入力された数式の参照</li>
+          <li>与えられた数式の評価</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#21 DWARFで標準出力に出力する：DWARFⅢ
+        <ul>
+          <li>評価結果の出力</li>
+          <li>実世界における意義</li>
+          <li>参考文献</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>3章 OS Hack
+    <ul>
+      <li>#22 実行可能ファイルとその起動方法
+        <ul>
+          <li>shebang</li>
+          <li>binfmt_misc</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#23 LinuxでHuge Pageを使う
+        <ul>
+          <li>Transparent Huge Page</li>
+          <li>明示的なHuge Pageの確保</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#24 CRIUを使ってプロセスを保存、再開する
+        <ul>
+          <li>CRIUの使い方</li>
+          <li>CRIUのしくみ</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#25 procfs / sysfsの基本を把握する
+        <ul>
+          <li>procfs</li>
+          <li>システム全体の情報に関するファイル</li>
+          <li>sysfs</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#26 用途に合わせたファイルシステムを選ぶ
+        <ul>
+          <li>Overlay Filesystem（OverlayFS）</li>
+          <li>Btrfs：Copy-On-Writeファイルシステム</li>
+          <li>EROFS：圧縮ファイルシステム</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#27 特定のプロセスに見せるファイルを差し替える
+        <ul>
+          <li>バインドマウントでファイルやディレクトリを一時的に置き換える</li>
+          <li>マウントネームスペースとバインドマウントで特定のプロセスにのみ置き換えを行う</li>
+          <li>OverlayFSを用いて、ファイルへの書き込みだけ別の場所へと置き換える</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#28 FUSEを使ってファイルシステムを自作する
+        <ul>
+          <li>FUSEとは？</li>
+          <li>FUSEのしくみ</li>
+          <li>ファイルシステムを自作してみる</li>
+          <li>パフォーマンス向上のコツ</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#29 特殊なメモリ領域vsyscallとvDSO
+        <ul>
+          <li>vsyscallの当初の用途</li>
+          <li>vsyscallのほかの用途</li>
+          <li>vDSO</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#30 KVMを使ってハイパーバイザを作成する
+        <ul>
+          <li>ハイパーバイザとは</li>
+          <li>KVMの概要</li>
+          <li>ゲストプログラムの準備</li>
+          <li>KVMのAPI</li>
+          <li>VMを実行する</li>
+          <li>実用的なハイパーバイザへの道</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#31 LinuxカーネルHack入門
+        <ul>
+          <li>Linuxカーネルを読む</li>
+          <li>Linuxカーネルをビルドする</li>
+          <li>ルートディスクイメージの作成</li>
+          <li>QEMUでLinuxシステムをブートする</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#32 Unikernel：アプリケーションをOSとして動かす
+        <ul>
+          <li>Unikernel/ライブラリOSとは</li>
+          <li>UnikraftでアプリケーションをUnikernelにする</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#33 UEFIとSecure Boot
+        <ul>
+          <li>Secure Boot</li>
+          <li>Secure Boot変数</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#34 GNUツールチェインで機械語ファイルを出力する
+        <ul>
+          <li>リンカスクリプトを使ってバイナリファイルを出力する</li>
+          <li>C言語に対応したリンカスクリプト</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#35 QEMU上で動くファームウェアを作る
+        <ul>
+          <li>PCのブート</li>
+          <li>QEMUを使ったファームウェアプログラミング</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#36 Chromebook上で自作のファームウェアを動かす
+        <ul>
+          <li>ChromebookのCCD</li>
+          <li>CCDを使ったファームウェア書き換え</li>
+          <li>Apollo Lakeを搭載したChromebook上でのファームウェアプログラミング</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>4章 コンテナHack
+    <ul>
+      <li>#37 Linuxネームスペースでプロセスを分離する
+        <ul>
+          <li>Linuxネームスペース</li>
+          <li>PID/マウントネームスペースを作ってみる</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#38 cgroupでプロセスのリソースを管理する
+        <ul>
+          <li>cgroupの概要</li>
+          <li>cgroupの基本操作</li>
+          <li>メモリのコントロール</li>
+          <li>PIDのコントロール</li>
+          <li>I/Oのコントロール</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#39 chroot/pivot_rootでルートディレクトリを切り替える
+        <ul>
+          <li>chrootによるルートディレクトリの切り替え</li>
+          <li>pivot_rootによるルートファイルシステムの差し替え</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#40 一般ユーザーがrootのように振る舞う方法3選
+        <ul>
+          <li>setuidを設定する</li>
+          <li>必要なケーパビリティだけを付与する</li>
+          <li>ユーザーネームスペースの中でrootになる</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#41 rootlessコンテナの使い方とそのしくみ
+        <ul>
+          <li>rootlessコンテナとは</li>
+          <li>Podmanを使ってみる</li>
+          <li>rootlessコンテナのしくみ</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#42 ユーザーネームスペース内で各種のネームスペースを作成する
+        <ul>
+          <li>ユーザーネームスペースの制限</li>
+          <li>マウントネームスペースの制限</li>
+          <li>ネットワークネームスペースの制限</li>
+          <li>cgroupネームスペースの制限</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#43 /proc/PID/rootからコンテナ内のファイルに直接アクセスする
+        <ul>
+          <li>/proc/&lt;PID&gt;/rootを使ってみる</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>5章 デバッガ・トレーサHack
+    <ul>
+      <li>#44 gdb Tips
+        <ul>
+          <li>コマンドを省略する</li>
+          <li>特定の状況でブレークする</li>
+          <li>ブレーク時に自動で処理する</li>
+          <li>さまざまな情報を取得する</li>
+          <li>環境設定</li>
+          <li>メモリの検索・操作</li>
+          <li>レコード</li>
+          <li>チェックポイント</li>
+          <li>便利に表示する</li>
+          <li>Python連携</li>
+          <li>プラグイン（.gdbinit)</li>
+          <li>gdbserver</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#45 rrを使ってRecord and Replayデバッグを行う
+        <ul>
+          <li>rrとは</li>
+          <li>rrを使ってみる</li>
+          <li>rrの原理としくみ</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#46 サニタイザで低レイヤのバグを見つける：サニタイザⅠ
+        <ul>
+          <li>サニタイザとは</li>
+          <li>サニタイザの種類</li>
+          <li>サニタイザを使ってみる</li>
+          <li>ほかのバグ検出方法との関係</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#47 Address Sanitizerのしくみ：サニタイザⅡ
+        <ul>
+          <li>Address Sanitizerが追加するコード</li>
+          <li>アセンブリを見てみる</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#48 Linuxパフォーマンス解析ことはじめ
+        <ul>
+          <li>可観測性ツールの分類</li>
+          <li>perfコマンド</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#49 ftraceを使ってカーネル内で起こっていることをトレースする
+        <ul>
+          <li>準備</li>
+          <li>関数コールグラフのトレース</li>
+          <li>関数トレーシングのしくみ</li>
+          <li>イベントトレーシング</li>
+          <li>ユーザースペースのイベントも記録する</li>
+          <li>trace-cmdを通じたトレーシング</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#50 eBPFを使ったトレーシング入門
+        <ul>
+          <li>eBPFとは</li>
+          <li>eBPFプログラミングのためのライブラリ</li>
+          <li>bpftraceを使ってみる</li>
+          <li>bpftraceの基本的な文法</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#51 DBIで実行命令をトレース・改変する
+        <ul>
+          <li>代表的なDBIツール</li>
+          <li>Fridaでトレースと改変を行う</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#52 Intel PTで高速にトレースを取得する
+        <ul>
+          <li>Intel PTのパケット</li>
+          <li>Intel PTで実行命令数を取得する</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>6章 セキュリティHack
+    <ul>
+      <li>#53 seccompでプロセスの使えるシステムコールを制限する
+        <ul>
+          <li>seccompとは</li>
+          <li>seccompを使ったプログラムを書く</li>
+          <li>実アプリケーションでの使用例</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#54 Landlockで非特権プロセスサンドボックスを作る
+        <ul>
+          <li>Landlock</li>
+          <li>Landlockを使ったプログラムを書く</li>
+          <li>Landlockプログラムの動作を確認する</li>
+          <li>注意点：Landlockの制限</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#55 ASLR：不正なメモリアクセスに対するセキュリティ機構
+        <ul>
+          <li>Linuxユーザーランドプロセスに対するASLRの動作</li>
+          <li>Linuxユーザーランドプロセスに対するASLRの実装</li>
+          <li>ASLRを回避する攻撃手法</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#56 ROP：メモリ破壊を悪用するスタンダードな攻撃手法
+        <ul>
+          <li>Linuxユーザーランドでの一例</li>
+          <li>ROPの重要性</li>
+          <li>ROPへの対策</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#57 Intel CET：ROPに対するセキュリティ機構
+        <ul>
+          <li>Shadow Stackの詳細</li>
+          <li>Intel SDEでIntel CETを試す</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#58 Clang CFIによって不正な制御フローを検知する
+        <ul>
+          <li>関数ポインタの検査</li>
+          <li>クラスオブジェクトのポインタの検査</li>
+          <li>共有ライブラリを考慮したバージョン</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#59 スタックフレームの変化を観察する
+        <ul>
+          <li>素朴なスタックフレーム</li>
+          <li>フレームポインタの省略</li>
+          <li>Stack Smashing Protector（SSP）</li>
+          <li>Red zoneの利用</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#60 ファジングの概要と分類
+        <ul>
+          <li>ファザー（ファジングツール）の種別</li>
+          <li>代表的なファジングツール</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#61 グレイボックスファジングでバグや脆弱性を探す
+        <ul>
+          <li>プログラムをビルドしてAFL++でファジングする</li>
+          <li>グレイボックスファザーのしくみ</li>
+          <li>AFL++におけるプロセス間通信のしくみ</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#62 LibAFLでファザーを実装する
+        <ul>
+          <li>対象プログラムのビルド</li>
+          <li>愚直なファザーを実装する</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#63 LibAFLで実装したファザーを改良する
+        <ul>
+          <li>シードスケジューリングの改良</li>
+          <li>実行速度の改善</li>
+          <li>そのほかの改善</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#64 angrでシンボリック実行する
+        <ul>
+          <li>代表的なシンボリック実行ツール</li>
+          <li>angrでシンボリック実行する</li>
+          <li>シンボリック実行の難しさ</li>
+          <li>技術的な問題への対処</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#65 BadUSB：使用者を騙すUSBデバイス
+        <ul>
+          <li>実験</li>
+          <li>対策</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#66 Row Hammer：DRAMの脆弱性に対する攻撃手法
+        <ul>
+          <li>原理</li>
+          <li>コードの例</li>
+          <li>緩和策と発展形の攻撃</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#67 MeltdownとSpectre：CPUの脆弱性に対する攻撃手法
+        <ul>
+          <li>CPUの最適化技法</li>
+          <li>Meltdown</li>
+          <li>Spectre</li>
+          <li>影響を受けたCPUと対応</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>7章 数値表現とデータ処理Hack
+    <ul>
+      <li>#68 整数表現の基礎知識
+        <ul>
+          <li>符号なし整数と2の補数による符号付き整数</li>
+          <li>レジスタと演算器のビット幅</li>
+          <li>エンディアン</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#69 さまざまな整数表現
+        <ul>
+          <li>任意精度数値型と多倍長表現</li>
+          <li>固定小数点数</li>
+          <li>可変長表現</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#70 浮動小数点数のビット列表現を理解する
+        <ul>
+          <li>浮動小数点数の基本（IEEE 754の基本）</li>
+          <li>浮動小数点数のビット列表現（2進）</li>
+          <li>浮動小数点数のビット列表現（10進）</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#71 浮動小数点例外
+        <ul>
+          <li>浮動小数点例外の種類</li>
+          <li>例外の状態フラグ</li>
+          <li>デフォルト以外の処理方法</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#72 浮動小数点数の丸め方を変える
+        <ul>
+          <li>5通りの丸め方</li>
+          <li>動的な指定</li>
+          <li>静的な指定</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#73 浮動小数点環境を触るコードに対するコンパイラの最適化と戦う
+        <ul>
+          <li>コンパイラの最適化によって意図通りに動かなくなる例</li>
+          <li>C標準のプラグマ</li>
+          <li>volatileの利用</li>
+          <li>インラインアセンブリの利用</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#74 NaNを深掘りする
+        <ul>
+          <li>signaling NaN</li>
+          <li>NaNのペイロードと伝播</li>
+          <li>RISC-Vの浮動小数点レジスタとNaN</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#75 浮動小数点数のアーキテクチャごとの差異に触れる
+        <ul>
+          <li>アンダーフローの判定のタイミング</li>
+          <li>FMAとinvalid operation例外</li>
+          <li>浮動小数点数から整数への変換</li>
+          <li>Armの代替動作（FEAT_AFP）</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#76 SIMD命令セットの基礎知識
+        <ul>
+          <li>x86/x86-64のSIMD命令</li>
+          <li>ARMのSIMD命令</li>
+          <li>コンパイラにSIMD命令を出力させる</li>
+          <li>サポートされる拡張命令セットを検出する</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#77 SIMD並列化したコードを書く
+        <ul>
+          <li>並列化コードを書く前に</li>
+          <li>コンパイラの自動並列化を利用する</li>
+          <li>OpenMP SIMDプラグマを使う</li>
+          <li>コンパイラのintrinsic関数を使う</li>
+          <li>SIMDラッパライブラリを使う</li>
+          <li>アセンブリを手書きする</li>
+          <li>JITライブラリを使う</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#78 SIMD命令を使ったさまざまなテクニック
+        <ul>
+          <li>SIMD命令を使ってstrlen関数を高速化する</li>
+          <li>SIMD命令を使ってVByteの展開を高速化する</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>8章 言語処理系Hack
+    <ul>
+      <li>#79 NaNを活用して64ビット値にタグ付きの値を格納する
+        <ul>
+          <li>動的型付き言語での値の表現</li>
+          <li>NaN boxingの例</li>
+          <li>採用例</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#80 ucontext.hでコルーチンを実装する
+        <ul>
+          <li>ucontext.h</li>
+          <li>コルーチンを実装する</li>
+          <li>ucontext.hの問題点</li>
+          <li>スタックを持たないコルーチン</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#81 Profile Guided Optimization
+        <ul>
+          <li>PGOを使う一般的な手順</li>
+          <li>PGOを使う具体例</li>
+          <li>参考文献</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#82 LD_PRELOADを使ってメモリアロケータを入れ替える
+        <ul>
+          <li>さまざまなメモリアロケータ</li>
+          <li>LD_PRELOADを使ったメモリアロケータの入れ替え</li>
+          <li>メモリアロケータの自作</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#83 ABIと呼び出し規約を理解する
+        <ul>
+          <li>ABIがそろっていない場合に起こる現象の例</li>
+          <li>C言語のABI</li>
+          <li>C言語以外のABI</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#84 libffiで実行時までシグネチャがわからない関数を呼び出す
+        <ul>
+          <li>PythonのFFIを使ってみる</li>
+          <li>dlopen/dlsymを使った共有ライブラリのロード</li>
+          <li>アセンブリ言語による呼び出し規約の実装</li>
+          <li>libffiを使う</li>
+          <li>C++/Rustでライブラリを提供する</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#85 実行時に機械語を生成する
+        <ul>
+          <li>例：関数を部分適用する</li>
+          <li>メモリの実行許可</li>
+          <li>実行時生成された関数をperfで見えるようにする</li>
+          <li>発展</li>
+          <li>まとめ</li>
+        </ul>
+      </li>
+      <li>#86 GCC/Clangの組み込み関数を利用する
+        <ul>
+          <li>ビット操作</li>
+          <li>コードが実行されないことをコンパイラに伝える</li>
+          <li>標準化された組み込み関数やマクロ</li>
+          <li>まとめ</li>
+          <li>組み込み関数のリファレンス</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>9章 そのほかのHack
+    <ul>
+      <li>#87 用語集</li>
+      <li>#88 Binary Hacksに必要なツール
+        <ul>
+          <li>コンパイラ・デバッガ</li>
+          <li>バイナリファイル関連のツール</li>
+          <li>OS関連のコマンド</li>
+          <li>そのほかのコマンド</li>
+        </ul>
+      </li>
+      <li>#89 文献案内
+        <ul>
+          <li>書籍</li>
+          <li>インターネット</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+      </div>
+    </main><footer class="site-footer h-card">
+</footer>
+</body>
+
+</html>

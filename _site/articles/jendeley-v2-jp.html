@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>jendeley v2 - インクリメンタルな曖昧検索の実装 | Akira Kawata</title>
+<meta name="generator" content="Jekyll v4.3.4" />
+<meta property="og:title" content="jendeley v2 - インクリメンタルな曖昧検索の実装" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="/articles/jendeley-v2-jp.html" />
+<meta property="og:url" content="/articles/jendeley-v2-jp.html" />
+<meta property="og:site_name" content="Akira Kawata" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="jendeley v2 - インクリメンタルな曖昧検索の実装" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"jendeley v2 - インクリメンタルな曖昧検索の実装","url":"/articles/jendeley-v2-jp.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Akira Kawata" /></head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Akira Kawata</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+      </nav></div>
+</header>
+
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <h1 id="jendeley-v2---インクリメンタルな曖昧検索の実装-">jendeley v2 - インクリメンタルな曖昧検索の実装 <!-- omit in toc --></h1>
+
+<script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
+
+<script type="text/javascript" async="" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<p><a href="https://zenn.dev/a_kawashiro/articles/a2170f967f9508">jendeley</a>という JSON ベースの文書管理ソフトウェアを作って日々使っています。先日、バージョン 2 にアップデートするに当たって、長らく欲しかった文書全体に対するインクリメンタルな曖昧検索機能を実装しました。</p>
+
+<h2 id="目次-">目次 <!-- omit in toc --></h2>
+
+<ul>
+  <li><a href="#jendeley-とは">jendeley とは</a></li>
+  <li><a href="#インクリメンタルな曖昧検索">インクリメンタルな曖昧検索</a>
+    <ul>
+      <li><a href="#インクリメンタルな曖昧検索とは">インクリメンタルな曖昧検索とは</a></li>
+      <li><a href="#jendeley-のインクリメンタルな曖昧検索機能">jendeley のインクリメンタルな曖昧検索機能</a></li>
+    </ul>
+  </li>
+  <li><a href="#jendeley-のインクリメンタルな曖昧検索の実装">jendeley のインクリメンタルな曖昧検索の実装</a>
+    <ul>
+      <li><a href="#求められる性能">求められる性能</a></li>
+      <li><a href="#ナイーブな実装">ナイーブな実装</a></li>
+      <li><a href="#接尾辞木を用いた実装">接尾辞木を用いた実装</a>
+        <ul>
+          <li><a href="#接尾辞木とは">接尾辞木とは</a></li>
+          <li><a href="#ukkonen-のアルゴリズムを用いた接尾辞木の構築">Ukkonen のアルゴリズムを用いた接尾辞木の構築</a></li>
+        </ul>
+      </li>
+      <li><a href="#接尾辞木を用いた実装の性能">接尾辞木を用いた実装の性能</a></li>
+    </ul>
+  </li>
+  <li><a href="#まとめ">まとめ</a></li>
+  <li><a href="#謝辞">謝辞</a></li>
+  <li><a href="#お願い">お願い</a></li>
+  <li><a href="#連絡先">連絡先</a></li>
+  <li><a href="#参考文献">参考文献</a></li>
+</ul>
+
+<h2 id="jendeley-とは">jendeley とは</h2>
+
+<p>まずはじめに <a href="https://github.com/akawashiro/jendeley">jendeley</a> を簡単に紹介します。<a href="https://github.com/akawashiro/jendeley">jendeley</a> とは僕が作っている文書管理ソフトウェアです。<code class="language-plaintext highlighter-rouge">npm i @a_kawashiro/jendeley</code>でインストールできます。</p>
+
+<ul>
+  <li>データベースを人間に可読な JSON で保持すること</li>
+  <li>サーバではなくローカルの PC で動作すること</li>
+  <li>node.js とブラウザが動く環境なら OS を問わず動作すること</li>
+</ul>
+
+<p>の 3 つの原則のもとに開発しています。半年ほど前の 2022 年 11 月に開発を開始し、先日 v2.0 をリリースしました。2022 年 1 月にリリースした jendeley v1.0 はタイトル、著者、ユーザの付与したタグ、ユーザの書いたコメントに対してキーワードで文書を絞り込むことができました。しかし文書の中身に対して検索を行うことはできませんでした。</p>
+
+<p>僕は昔から<a href="https://a-kawashiro.hatenablog.com/entry/2020/03/06/192527">検索エンジンを自作する</a>ことに興味があることもあり、jendeley に全文検索を実装したいと思っていました。更に、常日頃から<a href="https://github.com/junegunn/fzf">fzf</a>というファジー検索ツールを常用しているので、検索機能を実装するならインクリメンタルな曖昧検索を実装したいと考えていました。</p>
+
+<h2 id="インクリメンタルな曖昧検索">インクリメンタルな曖昧検索</h2>
+
+<h3 id="インクリメンタルな曖昧検索とは">インクリメンタルな曖昧検索とは</h3>
+
+<p>「インクリメンタルな曖昧検索」とは、文字を一文字打つごとに新たに検索が行われ、また入力したキーワードに完全に一致しなくてもマッチするような検索のことです。<a href="https://github.com/junegunn/fzf">fzf</a>は CLI で動作するインクリメンタルな曖昧検索ツールであり、シェルに組み込んで履歴の検索を行ったり、エディタ に組み込んでカレントディレクトリ以下のソースコードを検索することができます。</p>
+
+<p><img src="./fzf-search-at-sold.gif" width="800" /></p>
+
+<p>上の動画は<a href="https://github.com/akawashiro/sold">sold</a>のソースコードを fzf を使って全文検索している様子です。曖昧検索なので完全に一致していない行もマッチしています。また、インクリメンタルな検索なので、一文字入力するごとに検索結果が更新されています。</p>
+
+<p>このインクリメンタルな曖昧検索は非常に便利で、僕はファイル検索、キーワード検索、コマンドの履歴を検索するショートカットを登録し、利用しています。</p>
+
+<h3 id="jendeley-のインクリメンタルな曖昧検索機能">jendeley のインクリメンタルな曖昧検索機能</h3>
+
+<p>jendeley は v2.0.0 でインクリメンタルな曖昧検索を実装しました。登録した文書の本文、タイトル、著者全てに対してインクリメンタルな曖昧検索を行うことができます。下の動画は実際にインクリメンタルな曖昧検索を行っている様子です。”Type theory”という検索クエリで検索しており、1 文字打つごとに全文検索の結果が変わっています。また、マッチした部分を太文字で表示し、その周囲も表示します。このため、文書の中でその検索クエリがどのような文脈で使われているかが瞬時にわかります。
+<img src="./jendeley-search-type-theory.gif" width="800" /></p>
+
+<h2 id="jendeley-のインクリメンタルな曖昧検索の実装">jendeley のインクリメンタルな曖昧検索の実装</h2>
+
+<h3 id="求められる性能">求められる性能</h3>
+
+<p>実装について説明する前に jendeley のインクリメンタルな曖昧検索に求められる性能を説明します。</p>
+
+<p>まず、検索対象となる文字列のサイズです。現在、僕の jendeley のデータベースのサイズは 117MiByte あり、その大部分が登録した文書の本文です。Python の簡単なスクリプトで集計したところ $ 1.0 \times 10^8 $ 文字ありました。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ls -alh jendeley_db.json
+-rw-r--r-- 1 akira akira 117M  5月 26 21:47 jendeley_db.json
+</code></pre></div></div>
+
+<p>次に応答時間です。今回は 100ms 以内に応答を返すことを目標に設定しました。この値には特に根拠がありません。この程度であればリアルタイムに見えるだろう考えたので、このように設定しました。</p>
+
+<h3 id="ナイーブな実装">ナイーブな実装</h3>
+
+<p>fzf で使われている検索アルゴリズムは<a href="https://en-jp.wantedly.com/companies/wantedly/post_articles/306103">fzf のスコア計算を読んでみる</a>で解説されています。このアルゴリズムは動的計画法を使ってスコアを計算し、文書の長さ$n$、クエリの長さ$k$のとき$O(nk)$で動作します。</p>
+
+<p>このアルゴリズムを実装し、実際に jendeley で使ってみたところ、応答に 1 秒以上かかることがありました。これではインクリメンタルな検索とは言い難いです。動的計画法のテーブルを部分的に構築するなどの工夫もしてみたのですが、一文字打つごとに$O(n)$の計算量がかかることが致命的で、小手先の改善ではインクリメンタルな検索は実現できないと判断しました。</p>
+
+<h3 id="接尾辞木を用いた実装">接尾辞木を用いた実装</h3>
+
+<p>jendeley のインクリメンタルな曖昧検索には検索する対象の文字列が変化しない、という特徴があります。この特徴を活かして高速に文字列検索を実現するアルゴリズムに接尾辞木を用いた文字列検索があります。</p>
+
+<h4 id="接尾辞木とは">接尾辞木とは</h4>
+
+<p><a href="https://ja.wikipedia.org/wiki/%E6%8E%A5%E5%B0%BE%E8%BE%9E%E6%9C%A8">接尾辞木</a>とは与えられた文字列の接尾部を木構造で表すデータ構造です。例えば”BANANA”という文字列の接尾辞木は以下の図のようになります。一度、検索対象の文字列の接尾辞木を構築すれば、検索対象の文字列に対する検索は木の根からクエリに沿って木をたどっていくだけで実現でき、クエリの長さ$k$のとき$O(k)$で実装できます。なお、曖昧検索は木をたどるときに<a href="https://github.com/akawashiro/jendeley/blob/53ab1b8e76663a79ff2382e5d215fe3892164701/jendeley-backend/src/suffix_patricia_tree.ts#L228-L260">一致しない文字を見つけたら読み飛ばすように工夫</a>をすれば実現できます。</p>
+
+<p>ただし、検索対象の文字列の長さが$n$のとき、接尾辞の数は$n$個、接尾辞の長さは$O(n)$です。このため、ナイーブに接尾辞木を構築した場合、$O(n^2)$の時間がかかります。これでは <a href="#求められる性能">求められる性能</a>で述べた $n=1.0 \times 10^8$ のとき現実的な時間での構築が不可能です。</p>
+
+<p><img src="./Suffix_tree_BANANA.png" height="600" /></p>
+
+<p><a href="https://ja.wikipedia.org/wiki/%E6%8E%A5%E5%B0%BE%E8%BE%9E%E6%9C%A8">https://ja.wikipedia.org/wiki/接尾辞木</a>より</p>
+
+<h4 id="ukkonen-のアルゴリズムを用いた接尾辞木の構築">Ukkonen のアルゴリズムを用いた接尾辞木の構築</h4>
+
+<p>ところが、接尾辞木を$O(n)$で構築するアルゴリズムが存在します。<a href="https://en.wikipedia.org/wiki/Ukkonen%27s_algorithm">Ukkonen のアルゴリズム</a>です。詳細は省略しますが、Ukkonen のアルゴリズムを使えば接尾辞木を $O(n)$で構築することができます。jendeley での実装は <a href="https://github.com/akawashiro/jendeley/blob/main/jendeley-backend/src/suffix_patricia_tree.ts">jendeley-backend/src/suffix_patricia_tree.ts</a>にあります。</p>
+
+<p>接尾辞木は文書ごとに構築します。構築のタイミングは最初にその文書が全文検索の対象になったときです。一度構築した接尾辞木はキャッシュされます。</p>
+
+<p>実装に際しては以下の記事が大変参考になりました。特に 1 つ目の Stack Overflow の記事は構築の過程が丁寧に説明されており、アルゴリズムの挙動を把握する上で非常に役立ちました。</p>
+
+<ul>
+  <li><a href="https://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english">Ukkonen’s suffix tree algorithm in plain English</a></li>
+  <li><a href="https://www.geeksforgeeks.org/ukkonens-suffix-tree-construction-part-1/">Ukkonen’s Suffix Tree Construction – Part 1</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Ukkonen%27s_algorithm">Ukkonen’s algorithm - Wikipedia</a></li>
+</ul>
+
+<h3 id="接尾辞木を用いた実装の性能">接尾辞木を用いた実装の性能</h3>
+
+<p>下の画像は jendeley で”Type theory”と検索しているときのログです。Ukkonen のアルゴリズムで接尾辞木を構築することで 3820ms で接尾辞木の構築が完了し、その後の検索クエリに 67ms から 130ms で応答できていることがわかります。
+<img src="./jendeley-search-log.png" width="800" /></p>
+
+<h2 id="まとめ">まとめ</h2>
+
+<p>jendeley では v2.0 のリリースにあたって、登録した全ての文書を対象とするインクリメンタルファジー検索を実装しました。この検索を高速に行うため、接尾辞木を Ukkonen のアルゴリズムを用いて構築しました。</p>
+
+<h2 id="謝辞">謝辞</h2>
+
+<p>事前に原稿を読んでコメントをくださった、<a href="https://twitter.com/gky360">gky360</a>さん、<a href="https://twitter.com/kdwkshh">Shuhei Kadowaki</a>さん、<a href="https://twitter.com/ocxtal">パセリなずな</a>さん、ありがとうございました。</p>
+
+<h2 id="お願い">お願い</h2>
+
+<p><a href="https://github.com/akawashiro/jendeley">Github の jendeley のリポジトリ</a>にスターしてください。</p>
+
+<h2 id="連絡先">連絡先</h2>
+
+<p>この記事に誤りがあった場合は<a href="https://twitter.com/a_kawashiro">Twitter</a>等で連絡をください。修正します。その他の連絡先は <a href="https://akawashiro.github.io/#links">https://akawashiro.github.io/</a> にあります。</p>
+
+<h2 id="参考文献">参考文献</h2>
+
+<ul>
+  <li><a href="https://a-kawashiro.hatenablog.com/entry/2020/03/06/192527">検索エンジンを自作する夢</a>
+未踏プロジェクトで検索エンジンを作っていたときの反省文書です。</li>
+  <li><a href="https://github.com/junegunn/fzf">fzf</a>
+日々使っている曖昧検索ツールです。</li>
+  <li><a href="https://en-jp.wantedly.com/companies/wantedly/post_articles/306103">fzf のスコア計算を読んでみる</a>
+fzf が検索クエリに対してどのようにスコアを計算しているかが解説されています。</li>
+  <li><a href="https://ja.wikipedia.org/wiki/%E6%8E%A5%E5%B0%BE%E8%BE%9E%E6%9C%A8">https://ja.wikipedia.org/wiki/接尾辞木</a></li>
+  <li><a href="https://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english">Ukkonen’s suffix tree algorithm in plain English</a>
+Ukkonen のアルゴリズムの挙動を把握するときに役立つ記事です。</li>
+  <li><a href="https://www.geeksforgeeks.org/ukkonens-suffix-tree-construction-part-1/">Ukkonen’s Suffix Tree Construction – Part 1</a>
+Ukkonen のアルゴリズムの実装に際しては Stack Overflow のものよりも役立つかもしれません。</li>
+  <li><a href="https://en.wikipedia.org/wiki/Ukkonen%27s_algorithm">Ukkonen’s algorithm - Wikipedia</a>
+Ukkonen のアルゴリズムの概略を把握するのに良いです。</li>
+</ul>
+
+      </div>
+    </main><footer class="site-footer h-card">
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Linux におけるデバイスファイルの仕組み | Akira Kawata</title>
+<meta name="generator" content="Jekyll v4.3.4" />
+<meta property="og:title" content="Linux におけるデバイスファイルの仕組み" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="/articles/how-linux-device-file-works-jp.html" />
+<meta property="og:url" content="/articles/how-linux-device-file-works-jp.html" />
+<meta property="og:site_name" content="Akira Kawata" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Linux におけるデバイスファイルの仕組み" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"Linux におけるデバイスファイルの仕組み","url":"/articles/how-linux-device-file-works-jp.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Akira Kawata" /></head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Akira Kawata</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+      </nav></div>
+</header>
+
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <h1 id="linux-におけるデバイスファイルの仕組み-">Linux におけるデバイスファイルの仕組み <!-- omit in toc --></h1>
+
+<p>Linux におけるデバイスファイルはデバイスをファイルという概念を通して扱えるようにしたものです。デバイスファイルは通常のファイルと同様に読み書きを行うことができます。しかし実際には、その読み書きはデバイスドライバを通じてデバイスの制御に変換されます。</p>
+
+<p>この記事では、デバイスファイルへの読み書きがどのようにデバイスの制御に変換されるのかを説明します。デバイスファイルはデバイスドライバとファイルの 2 つのコンポーネントに依存したものであるので、最初にデバイスドライバ、次にファイルについて説明し、最後にデバイスファイルがどのようにデバイスドライバと結び付けられるかを解説します。</p>
+
+<p>この記事の内容は主に<a href="https://www.oreilly.co.jp/books/9784873113135/">詳解 Linux カーネル 第 3 版</a>及び<a href="https://github.com/torvalds/linux/tree/v6.1">https://github.com/torvalds/linux/tree/v6.1</a>によります。</p>
+
+<h2 id="目次-">目次 <!-- omit in toc --></h2>
+
+<ul>
+  <li><a href="#デバイスドライバ">デバイスドライバ</a>
+    <ul>
+      <li><a href="#デバイスドライバの実例">デバイスドライバの実例</a></li>
+      <li><a href="#read_writec-からわかること"><code class="language-plaintext highlighter-rouge">read_write.c</code> からわかること</a></li>
+      <li><a href="#insmod">insmod</a>
+        <ul>
+          <li><a href="#insmod-のユーザ空間での処理">insmod のユーザ空間での処理</a></li>
+          <li><a href="#insmod-のカーネル空間での処理">insmod のカーネル空間での処理</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#ファイル">ファイル</a>
+    <ul>
+      <li><a href="#vfsvirtual-file-system">VFS(Virtual File System)</a>
+        <ul>
+          <li><a href="#inode">inode</a></li>
+          <li><a href="#普通のファイルの-inode">普通のファイルの inode</a></li>
+          <li><a href="#デバイスファイルの-inode">デバイスファイルの inode</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#デバイスドライバとファイルの接続">デバイスドライバとファイルの接続</a>
+    <ul>
+      <li><a href="#mknod">mknod</a>
+        <ul>
+          <li><a href="#mknod-のユーザ空間での処理">mknod のユーザ空間での処理</a></li>
+          <li><a href="#mknod-のカーネル空間での処理">mknod のカーネル空間での処理</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#参考">参考</a></li>
+  <li><a href="#連絡先">連絡先</a></li>
+</ul>
+
+<h2 id="デバイスドライバ">デバイスドライバ</h2>
+
+<p>デバイスドライバとはカーネルルーチンの集合です。デバイスドライバは後で説明する Virtual File System(VFS)の各オペレーションをデバイス固有の関数に結びつけます。</p>
+
+<h3 id="デバイスドライバの実例">デバイスドライバの実例</h3>
+
+<p>デバイスドライバを作って実際に動かしてみます。以下のような <code class="language-plaintext highlighter-rouge">read_write.c</code> と <code class="language-plaintext highlighter-rouge">Makefile</code> を用意します。この２つは<a href="https://github.com/Johannes4Linux/Linux_Driver_Tutorial/tree/main/03_read_write">Johannes4Linux/Linux_Driver_Tutorial/03_read_write</a>を一部改変したものです。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/ *read_write.c * /
+#include &lt;linux/cdev.h&gt;
+#include &lt;linux/fs.h&gt;
+#include &lt;linux/init.h&gt;
+#include &lt;linux/module.h&gt;
+#include &lt;linux/uaccess.h&gt;
+
+    MODULE_LICENSE("GPL");
+
+#define DRIVER_MAJOR 333
+#define DRIVER_NAME "read_write_driver"
+
+static ssize_t driver_read(struct file *File, char *user_buffer, size_t count,
+                           loff_t *offs) {
+  user_buffer[0] = 'A';
+  return 1;
+}
+
+static ssize_t driver_write(struct file *File, const char *user_buffer,
+                            size_t count, loff_t *offs) {
+  return 1;
+}
+
+static int driver_open(struct inode *device_file, struct file *instance) {
+  printk("read_write_driver - open was called!\n");
+  return 0;
+}
+
+static int driver_close(struct inode *device_file, struct file *instance) {
+  printk("read_write_driver - close was called!\n");
+  return 0;
+}
+
+static struct file_operations fops = {.open = driver_open,
+                                      .release = driver_close,
+                                      .read = driver_read,
+                                      .write = driver_write};
+
+static int __init ModuleInit(void) {
+  printk("read_write_driver - ModuleInit was called!\n");
+  register_chrdev(DRIVER_MAJOR, DRIVER_NAME, &amp;fops);
+  return 0;
+}
+
+static void __exit ModuleExit(void) {
+  printk("read_write_driver - ModuleExit was called!\n");
+  unregister_chrdev(DRIVER_MAJOR, DRIVER_NAME);
+}
+
+module_init(ModuleInit);
+module_exit(ModuleExit);
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Makefile
+obj-m += read_write.o
+
+all:
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+
+clean:
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+</code></pre></div></div>
+
+<p>これをビルドしてインストールし、デバイスファイルを作成すると<code class="language-plaintext highlighter-rouge">A</code> が無限に読み出されるデバイスファイルができます。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ make
+$ sudo insmod read_write.ko
+$ sudo mknod /dev/read_write c 333 1
+$ cat /dev/read_write
+AAAAAA...
+</code></pre></div></div>
+
+<h3 id="read_writec-からわかること"><code class="language-plaintext highlighter-rouge">read_write.c</code> からわかること</h3>
+
+<p><code class="language-plaintext highlighter-rouge">read_write.c</code>からは次のことがわかります。</p>
+
+<ul>
+  <li>このデバイスドライバの major 番号は<code class="language-plaintext highlighter-rouge">333</code>である。</li>
+  <li>デバイスドライバは単なる関数の集合である。</li>
+  <li><code class="language-plaintext highlighter-rouge">open(2)</code>と<code class="language-plaintext highlighter-rouge">myDevice_open</code>、<code class="language-plaintext highlighter-rouge">release(2)</code>と<code class="language-plaintext highlighter-rouge">driver_close</code>、<code class="language-plaintext highlighter-rouge">read(2)</code>と<code class="language-plaintext highlighter-rouge">myDevice_read</code>、<code class="language-plaintext highlighter-rouge">write(2)</code>と<code class="language-plaintext highlighter-rouge">driver_write</code>が対応している。</li>
+</ul>
+
+<p>以上から<code class="language-plaintext highlighter-rouge">cat /dev/read_write</code> は このデバイスドライバの <code class="language-plaintext highlighter-rouge">driver_read</code> を呼び出すので <code class="language-plaintext highlighter-rouge">A</code> が無限に読み出されます。なお、major 番号の<code class="language-plaintext highlighter-rouge">333</code>に意味はありません。</p>
+
+<h3 id="insmod">insmod</h3>
+
+<p><code class="language-plaintext highlighter-rouge">insmod(8)</code> は Linux カーネルにカーネルモジュールを挿入するコマンドです。この章では <code class="language-plaintext highlighter-rouge">sudo insmod read_write.ko</code> がどのように<code class="language-plaintext highlighter-rouge">read_write.ko</code> をカーネルに登録するかを確認します。</p>
+
+<h4 id="insmod-のユーザ空間での処理">insmod のユーザ空間での処理</h4>
+
+<p><code class="language-plaintext highlighter-rouge">strace(1)</code>を使って<code class="language-plaintext highlighter-rouge">insmod(8)</code> が呼び出すシステムコールを確認すると<code class="language-plaintext highlighter-rouge">finit_module(2)</code>が呼ばれています。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># strace insmod read_write.ko
+...
+openat(AT_FDCWD, "/home/akira/misc/linux-device-file/driver_for_article/read_write.ko", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1", 6)               = 6
+lseek(3, 0, SEEK_SET)                   = 0
+newfstatat(3, "", {st_mode=S_IFREG|0664, st_size=6936, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 6936, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7fc8aae77000
+finit_module(3, "", 0)                  = 0
+munmap(0x7fc8aae77000, 6936)            = 0
+close(3)                                = 0
+exit_group(0)                           = ?
++++ exited with 0 +++
+</code></pre></div></div>
+
+<h4 id="insmod-のカーネル空間での処理">insmod のカーネル空間での処理</h4>
+
+<p><code class="language-plaintext highlighter-rouge">finit_module(2)</code> は Linux カーネル内の <a href="https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2916">kernel/module/main.c#29l6</a> で定義されています。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
+</code></pre></div></div>
+
+<p>ここから追っていくと <a href="https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2440">do_init_module 関数</a> で初期化処理を行っていることがわかります。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/*
+ * This is where the real work happens.
+ *
+ * Keep it uninlined to provide a reliable breakpoint target, e.g. for the gdb
+ * helper command 'lx-symbols'.
+ */
+static noinline int do_init_module(struct module *mod)
+</code></pre></div></div>
+
+<p>更に追っていくと <code class="language-plaintext highlighter-rouge">insmod(8)</code> を行った際には <a href="https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/kernel/module/main.c#L2455">ret = do_one_initcall(mod-&gt;init);</a> 経由でデバイスドライバ内の<code class="language-plaintext highlighter-rouge">ModuleInit</code> が呼び出されることがわかります。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    /* Start the module */
+	if (mod-&gt;init != NULL)
+		ret = do_one_initcall(mod-&gt;init);
+	if (ret &lt; 0) {
+		goto fail_free_freeinit;
+	}
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">printk</code> を駆使して調べると、この <code class="language-plaintext highlighter-rouge">mod-&gt;init</code> は <a href="https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/arch/x86/kernel/module.c#L131-L220">__apply_relocate_add</a>で設定されていました。この関数は名前から推測できるようにカーネルモジュール内の再配置を行う関数です。再配置情報と<code class="language-plaintext highlighter-rouge">mod-&gt;init</code>の関係については調べきれなかったため今後の課題とします。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>static int __apply_relocate_add(Elf64_Shdr *sechdrs,
+		   const char *strtab,
+		   unsigned int symindex,
+		   unsigned int relsec,
+		   struct module *me,
+		   void *(*write)(void *dest, const void *src, size_t len))
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">mod-&gt;init</code>経由で呼び出された<code class="language-plaintext highlighter-rouge">ModuleInit</code>は <code class="language-plaintext highlighter-rouge">register_chrdev</code> を呼び出し、最終的にカーネル内の <a href="https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L247-L302">__register_chrdev</a> を経由して <a href="https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66">kobj_map</a>に到達します。<a href="https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66">kobj_map</a> は <a href="https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/fs/char_dev.c#L28">cdev_map</a> にデバイスドライバを登録します。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int kobj_map(struct kobj_map *domain, dev_t dev, unsigned long range,
+	     struct module *module, kobj_probe_t *probe,
+	     int (*lock)(dev_t, void *), void *data)
+{
+    ...
+	mutex_lock(domain-&gt;lock);
+	for (i = 0, p -= n; i &lt; n; i++, p++, index++) {
+		struct probe **s = &amp;domain-&gt;probes[index % 255];
+		while (*s &amp;&amp; (*s)-&gt;range &lt; range)
+			s = &amp;(*s)-&gt;next;
+		p-&gt;next = *s;
+		*s = p;
+	}
+	...
+}
+</code></pre></div></div>
+
+<h2 id="ファイル">ファイル</h2>
+
+<p>この章では「デバイスファイル」の「ファイル」について簡単に説明します。</p>
+
+<h3 id="vfsvirtual-file-system">VFS(Virtual File System)</h3>
+
+<p>VFS とは標準的な UNIX ファイルシステムのすべてのシステムコールを取り扱う、カーネルが提供するソフトウェアレイヤです。提供されているシステムコールとして<code class="language-plaintext highlighter-rouge">open(2)</code>、<code class="language-plaintext highlighter-rouge">close(2)</code>、<code class="language-plaintext highlighter-rouge">write(2)</code> 等があります。このレイヤがあるので、ユーザは<code class="language-plaintext highlighter-rouge">ext4</code>、<code class="language-plaintext highlighter-rouge">NFS</code>、<code class="language-plaintext highlighter-rouge">proc</code> などの全く異なるシステムをインターフェイスで取り扱うことができます。</p>
+
+<p>例えば<code class="language-plaintext highlighter-rouge">cat(1)</code> は <code class="language-plaintext highlighter-rouge">cat /proc/self/maps</code> も <code class="language-plaintext highlighter-rouge">cat ./README.md</code>も可能ですが、前者はメモリ割付状態を、後者ははディスク上のファイルの中身を読み出しており、全く異なるシステムを同じインターフェイスで扱っています。</p>
+
+<p>Linux において VFS は構造体と関数ポインタを使ったオブジェクト指向で実装されていて、関数ポインタを持つ構造体がオブジェクトとして使われています。</p>
+
+<h4 id="inode">inode</h4>
+
+<p>inode オブジェクトは VFS において「普通のファイル」に対応するオブジェクトです。定義は <a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/include/linux/fs.h#L588-L703">fs.h</a> にあります。inode オブジェクト以外の他のオブジェクトとして、ファイルシステムそのものの情報を保持するスーパーブロックオブジェクト、オープンされているファイルとプロセスのやり取りの情報を保持するファイルオブジェクト、ディレクトリに関する情報を保持する d エントリオブジェクトがあります。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct inode {
+	umode_t			i_mode;
+	unsigned short		i_opflags;
+	kuid_t			i_uid;
+	kgid_t			i_gid;
+	unsigned int		i_flags;
+  ...
+  union {
+		struct pipe_inode_info	*i_pipe;
+		struct cdev		*i_cdev;
+		char			*i_link;
+		unsigned		i_dir_seq;
+	};
+  ...
+};
+</code></pre></div></div>
+
+<h4 id="普通のファイルの-inode">普通のファイルの inode</h4>
+
+<p><code class="language-plaintext highlighter-rouge">stat(1)</code>を使うとファイルの i ノード情報を表示することができ、<code class="language-plaintext highlighter-rouge">struct inode</code> と対応した内容が表示されます。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[@goshun](master)~/misc/linux-device-file
+&gt; stat README.md
+  File: README.md
+  Size: 20              Blocks: 8          IO Block: 4096   regular file
+Device: fd01h/64769d    Inode: 49676330    Links: 1
+Access: (0664/-rw-rw-r--)  Uid: ( 1000/   akira)   Gid: ( 1000/   akira)
+Access: 2023-01-28 11:19:15.104727788 +0900
+Modify: 2023-01-28 11:19:13.748734093 +0900
+Change: 2023-01-28 11:19:13.748734093 +0900
+ Birth: 2023-01-28 11:19:13.748734093 +0900
+</code></pre></div></div>
+
+<h4 id="デバイスファイルの-inode">デバイスファイルの inode</h4>
+
+<p>デバイスファイルの i ノード情報も表示してみます。<code class="language-plaintext highlighter-rouge">ls -il</code>で表示したときに先頭に<code class="language-plaintext highlighter-rouge">c</code> がついているとキャラクタデバイス、<code class="language-plaintext highlighter-rouge">b</code> がついているとブロックデバイスです。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[@goshun]/dev
+&gt; ls -il /dev/nvme0*
+201 crw------- 1 root root 240, 0  1月 29 19:02 /dev/nvme0
+319 brw-rw---- 1 root disk 259, 0  1月 29 19:02 /dev/nvme0n1
+320 brw-rw---- 1 root disk 259, 1  1月 29 19:02 /dev/nvme0n1p1
+321 brw-rw---- 1 root disk 259, 2  1月 29 19:02 /dev/nvme0n1p2
+322 brw-rw---- 1 root disk 259, 3  1月 29 19:02 /dev/nvme0n1p3
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[@goshun](master)~/misc/linux-device-file
+&gt; stat /dev/nvme0n1
+  File: /dev/nvme0n1
+  Size: 0               Blocks: 0          IO Block: 4096   block special file
+Device: 5h/5d   Inode: 319         Links: 1     Device type: 103,0
+Access: (0660/brw-rw----)  Uid: (    0/    root)   Gid: (    6/    disk)
+Access: 2023-01-28 10:03:26.964000726 +0900
+Modify: 2023-01-28 10:03:26.960000726 +0900
+Change: 2023-01-28 10:03:26.960000726 +0900
+ Birth: -
+</code></pre></div></div>
+
+<h2 id="デバイスドライバとファイルの接続">デバイスドライバとファイルの接続</h2>
+
+<h3 id="mknod">mknod</h3>
+
+<p><code class="language-plaintext highlighter-rouge">mknod(1)</code> はブロックデバイスファイルもしくはキャラクタデバイスファイルを作るためのコマンドです。<a href="#デバイスドライバの実例">デバイスドライバの実例</a> では <code class="language-plaintext highlighter-rouge">sudo mknod /dev/read_write c 333 1</code> を使ってデバイスファイル <code class="language-plaintext highlighter-rouge">/dev/read_write</code> を作成しました。<a href="https://man7.org/linux/man-pages/man2/mknod.2.html">mknod(2)</a>はこれに対応するシステムコールであり、ファイルシステム上にノード(おそらく inode のこと)を作るために使われます。</p>
+
+<h4 id="mknod-のユーザ空間での処理">mknod のユーザ空間での処理</h4>
+
+<p><code class="language-plaintext highlighter-rouge">strace(1)</code>を使って<code class="language-plaintext highlighter-rouge">mknod(2)</code>がどのように呼び出されているかを調べます。<code class="language-plaintext highlighter-rouge">0x14d</code>は 10 進で<code class="language-plaintext highlighter-rouge">333</code>なので <code class="language-plaintext highlighter-rouge">/dev/read_write</code> にメジャー番号と<code class="language-plaintext highlighter-rouge">333</code>、マイナー番号を<code class="language-plaintext highlighter-rouge">1</code>を指定して inode を作っていることがわかります。ちなみに、<code class="language-plaintext highlighter-rouge">mknod</code>と<code class="language-plaintext highlighter-rouge">mnknodat</code>はパス名が相対パスになるかどうかという違いです。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># strace mknod /dev/read_write c 333 1
+...
+close(3)                                = 0
+mknodat(AT_FDCWD, "/dev/read_write", S_IFCHR|0666, makedev(0x14d, 0x1)) = 0
+close(1)                                = 0
+close(2)                                = 0
+exit_group(0)                           = ?
++++ exited with 0 +++
+</code></pre></div></div>
+
+<h4 id="mknod-のカーネル空間での処理">mknod のカーネル空間での処理</h4>
+
+<p><code class="language-plaintext highlighter-rouge">mknodat</code>の本体は <a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988">do_mknodat</a> にあります。ここからデバイスファイルとデバイスドライバがどのように接続されるかを追っていきます。ここではデバイスはキャラクタデバイス、ファイルシステムは ext4 であるとします。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>static int do_mknodat(int dfd, struct filename *name, umode_t mode,
+		unsigned int dev)
+</code></pre></div></div>
+
+<p>キャラクタデバイス、ブロックデバイスを扱う場合、<a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3939-L3988">do_mknodat</a> は<a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3970-L3972">fs/namei.c#L3970-L3972</a>で <code class="language-plaintext highlighter-rouge">vfs_mknod</code> を呼び出します。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>		case S_IFCHR: case S_IFBLK:
+			error = vfs_mknod(mnt_userns, path.dentry-&gt;d_inode,
+					  dentry, mode, new_decode_dev(dev));
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">vfs_mknod</code>の定義は<a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3874-L3891">fs/namei.c#L3874-L3891</a>にあります。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
+ * vfs_mknod - create device node or file
+ * @mnt_userns:	user namespace of the mount the inode was found from
+ * @dir:	inode of @dentry
+ * @dentry:	pointer to dentry of the base directory
+ * @mode:	mode of the new device node or file
+ * @dev:	device number of device to create
+ *
+ * Create a device node or file.
+ *
+ * If the inode has been found through an idmapped mount the user namespace of
+ * the vfsmount must be passed through @mnt_userns. This function will then take
+ * care to map the inode according to @mnt_userns before checking permissions.
+ * On non-idmapped mounts or if permission checking is to be performed on the
+ * raw inode simply passs init_user_ns.
+ */
+int vfs_mknod(struct user_namespace *mnt_userns, struct inode *dir,
+	      struct dentry *dentry, umode_t mode, dev_t dev)
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">vfs_mknod</code>は d エントリの <code class="language-plaintext highlighter-rouge">mknod</code> を呼びます。ファイルシステムごとに <code class="language-plaintext highlighter-rouge">mknod</code>の実装が異なるが今回は<code class="language-plaintext highlighter-rouge">ext4</code>のものを追ってみます。<code class="language-plaintext highlighter-rouge">vfs_mknod</code> は
+<a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/namei.c#L3915">fs/namei.c#L3915</a> で <code class="language-plaintext highlighter-rouge">mknod</code> を呼んでいます。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	error = dir-&gt;i_op-&gt;mknod(mnt_userns, dir, dentry, mode, dev);
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">ext4</code> の <code class="language-plaintext highlighter-rouge">mknod</code> は<a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/ext4/namei.c#L4191">fs/ext4/namei.c#L4191</a>で定義されています。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>const struct inode_operations ext4_dir_inode_operations = {
+	...
+	.mknod		= ext4_mknod,
+	...
+};
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">ext4_mknod</code> の本体はここにあり、<a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/ext4/namei.c#L2830-L2862">fs/ext4/namei.c#L2830-L2862</a>の <code class="language-plaintext highlighter-rouge">init_special_inode</code> がデバイスに関係していそうに見えます。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>static int ext4_mknod(struct user_namespace *mnt_userns, struct inode *dir,
+		      struct dentry *dentry, umode_t mode, dev_t rdev)
+{
+	...
+		init_special_inode(inode, inode-&gt;i_mode, rdev);
+	...
+}
+</code></pre></div></div>
+
+<p>キャラクタデバイスの場合は <a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/inode.c#L2291-L2309">fs/inode.c#L2291-L2309</a> で<code class="language-plaintext highlighter-rouge">def_chr_fops</code> が設定されています。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void init_special_inode(struct inode *inode, umode_t mode, dev_t rdev)
+{
+	inode-&gt;i_mode = mode;
+	if (S_ISCHR(mode)) {
+		inode-&gt;i_fop = &amp;def_chr_fops;
+		inode-&gt;i_rdev = rdev;
+	} else if (S_ISBLK(mode)) {
+    ...
+  }
+}
+EXPORT_SYMBOL(init_special_inode);
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">def_chr_fops</code>は<a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/char_dev.c#L447-L455">fs/char_dev.c#L447-L455</a>で定義されています。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/*
+ * Dummy default file-operations: the only thing this does
+ * is contain the open that then fills in the correct operations
+ * depending on the special file...
+ */
+const struct file_operations def_chr_fops = {
+	.open = chrdev_open,
+	.llseek = noop_llseek,
+};
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">chrdev_open</code>が怪しいので定義を見ると <a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/char_dev.c#L370-L424">fs/char_dev.c#L370-L424</a> の<code class="language-plaintext highlighter-rouge">kobj_lookup</code> でドライバを探していそうです。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/*
+ * Called every time a character special file is opened
+ */
+static int chrdev_open(struct inode *inode, struct file *filp)
+{
+...
+		kobj = kobj_lookup(cdev_map, inode-&gt;i_rdev, &amp;idx);
+...
+}
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">insmod</code>のときに見た <a href="https://github.com/akawashiro/linux/blob/7c8da299ff040d55f3e2163e6725cb1eef7155a9/drivers/base/map.c#L32-L66">kobj_map</a>と同じファイルにたどりついたのでここで間違いなさそうです。<a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/drivers/base/map.c#L95-L133">drivers/base/map.c#L95-L133</a>でファイルにデバイスドライバを紐付けています。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct kobject *kobj_lookup(struct kobj_map *domain, dev_t dev, int *index)
+{
+	struct kobject *kobj;
+	struct probe *p;
+	unsigned long best = ~0UL;
+
+retry:
+	mutex_lock(domain-&gt;lock);
+	for (p = domain-&gt;probes[MAJOR(dev) % 255]; p; p = p-&gt;next) {
+		struct kobject *(*probe)(dev_t, int *, void *);
+		struct module *owner;
+		void *data;
+
+		if (p-&gt;dev &gt; dev || p-&gt;dev + p-&gt;range - 1 &lt; dev)
+			continue;
+		if (p-&gt;range - 1 &gt;= best)
+			break;
+		if (!try_module_get(p-&gt;owner))
+			continue;
+		owner = p-&gt;owner;
+		data = p-&gt;data;
+		probe = p-&gt;get;
+		best = p-&gt;range - 1;
+		*index = dev - p-&gt;dev;
+		if (p-&gt;lock &amp;&amp; p-&gt;lock(dev, data) &lt; 0) {
+			module_put(owner);
+			continue;
+		}
+		mutex_unlock(domain-&gt;lock);
+		kobj = probe(dev, index, data);
+		/* Currently -&gt;owner protects _only_ -&gt;probe() itself. */
+		module_put(owner);
+		if (kobj)
+			return kobj;
+		goto retry;
+	}
+	mutex_unlock(domain-&gt;lock);
+	return NULL;
+}
+
+</code></pre></div></div>
+
+<p>最後に実際にカーネルにパッチを当てて確認してみましょう。<a href="https://github.com/akawashiro/linux/blob/4aeb800558b98b2a39ee5d007730878e28da96ca/drivers/base/map.c#L114-L115">drivers/base/map.c#L114-L115</a> にログ出力を足してカーネルをインストールして、デバイスファイルを <a href="#デバイスドライバの実例">デバイスドライバの実例</a> と同様に作成します。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; git diff --patch "device-file-experiment~1"
+diff --git a/drivers/base/map.c b/drivers/base/map.c
+index 83aeb09ca161..57037223932e 100644
+--- a/drivers/base/map.c
++++ b/drivers/base/map.c
+@@ -111,6 +111,8 @@ struct kobject *kobj_lookup(struct kobj_map *domain, dev_t dev, int *index)
+                        break;
+                if (!try_module_get(p-&gt;owner))
+                        continue;
++
++               printk("%s:%d MAJOR(dev)=%u MINOR(dev)=%u\n", __FILE__, __LINE__, MAJOR(dev), MINOR(dev));
+                owner = p-&gt;owner;
+                data = p-&gt;data;
+                probe = p-&gt;get;
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">cat /dev/read_write</code> したときの <code class="language-plaintext highlighter-rouge">dmesg -wH</code> の様子が以下です。<code class="language-plaintext highlighter-rouge">cat(2)</code>が<code class="language-plaintext highlighter-rouge">/dev/read_write</code> を開いたときに対応するデバイスドライバが検索されて <code class="language-plaintext highlighter-rouge">read_write_driver</code> が呼ばれていることがわかります。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># dmesg -wH
+...
+[ +18.898110] drivers/base/map.c:115 MAJOR(dev)=136 MINOR(dev)=2
+[ +10.920752] drivers/base/map.c:115 MAJOR(dev)=136 MINOR(dev)=3
+[  +9.170364] loop0: detected capacity change from 0 to 8
+[  +1.212845] drivers/base/map.c:115 MAJOR(dev)=333 MINOR(dev)=1
+[  +0.000010] read_write_driver - open was called!
+[  +2.141643] read_write_driver - close was called!
+</code></pre></div></div>
+
+<h2 id="参考">参考</h2>
+
+<ul>
+  <li><a href="https://www.oreilly.co.jp/books/9784873113135/">詳解 Linux カーネル 第 3 版</a></li>
+  <li><a href="https://man7.org/linux/man-pages/man2/init_module.2.html">init_module(2) — Linux manual page</a></li>
+  <li><a href="https://qiita.com/hon_no_mushi/items/9865febd245afd887d26">linux kernel における insmod の裏側を確認</a></li>
+  <li><a href="https://github.com/torvalds/linux/tree/v6.1">https://github.com/torvalds/linux/tree/v6.1</a></li>
+  <li><a href="https://qiita.com/iwatake2222/items/1fdd2e0faaaa868a2db2">組み込み Linux デバイスドライバの作り方</a></li>
+  <li><a href="https://qiita.com/rarul/items/308d4eef138b511aa233">Linux のドライバの初期化が呼ばれる流れ</a></li>
+</ul>
+
+<h2 id="連絡先">連絡先</h2>
+
+<p>この記事に誤りがあった場合は<a href="https://twitter.com/a_kawashiro">Twitter</a>等で連絡をください。修正します。その他の連絡先は <a href="https://akawashiro.github.io/">https://akawashiro.github.io/</a> にあります。</p>
+
+      </div>
+    </main><footer class="site-footer h-card">
+</footer>
+</body>
+
+</html>

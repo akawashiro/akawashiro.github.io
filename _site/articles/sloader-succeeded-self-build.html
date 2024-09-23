@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Linuxのローダを自作する | Akira Kawata</title>
+<meta name="generator" content="Jekyll v4.3.4" />
+<meta property="og:title" content="Linuxのローダを自作する" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="/articles/sloader-succeeded-self-build.html" />
+<meta property="og:url" content="/articles/sloader-succeeded-self-build.html" />
+<meta property="og:site_name" content="Akira Kawata" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Linuxのローダを自作する" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"Linuxのローダを自作する","url":"/articles/sloader-succeeded-self-build.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Akira Kawata" /></head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Akira Kawata</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+      </nav></div>
+</header>
+
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <h2 id="概要-">概要 <!-- omit in toc --></h2>
+
+<p>Linux のスタンダードなローダ、<code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> の挙動を完全に理解するために、<code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>を完全に置き換え可能な <a href="https://github.com/akawashiro/sloader">https://github.com/akawashiro/sloader</a> を 2 年ほど前から開発しており、ある程度動くようになってきました。</p>
+
+<h2 id="目次-">目次 <!-- omit in toc --></h2>
+
+<ul>
+  <li><a href="#ローダとは何か">ローダとは何か</a></li>
+  <li><a href="#ld-linux-x86-64so2-の問題点"><code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> の問題点</a></li>
+  <li><a href="#sloader">sloader</a></li>
+  <li><a href="#sloader-の現状">sloader の現状</a></li>
+  <li><a href="#sloaderの実装">sloader の実装</a>
+    <ul>
+      <li><a href="#libcso内のシンボルの解決">libc.so 内のシンボルの解決</a></li>
+      <li><a href="#ロードされたプログラムのためのtls領域の確保">ロードされたプログラムのための TLS 領域の確保</a></li>
+    </ul>
+  </li>
+  <li><a href="#sloaderの課題">sloader の課題</a></li>
+  <li><a href="#お願い">お願い</a></li>
+</ul>
+
+<h2 id="ローダとは何か">ローダとは何か</h2>
+
+<p>Linux で実行可能なバイナリファイルを<a href="https://man7.org/linux/man-pages/man2/execve.2.html">execve(2)</a>を使って実行するとき、その実行パスは大きく 2 つに分類されます。</p>
+
+<ul>
+  <li>Linux カーネルが直接、バイナリファイルをメモリ空間にロードする。</li>
+  <li>バイナリが指定したローダ<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>がバイナリファイルをメモリ空間にロードする。</li>
+</ul>
+
+<p>なお、詳細は Linux カーネルの<a href="https://github.com/akawashiro/linux/blob/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/fs/binfmt_elf.c#L1249-L1280">fs/binfmt_elf.c#L1249-L1280</a>付近を参照してください。</p>
+
+<p><code class="language-plaintext highlighter-rouge">readelf -l</code> でバイナリファイルの <code class="language-plaintext highlighter-rouge">PT_INTERP</code> セグメントを見ると、そのバイナリファイルがどちらの方法で起動されるかを確認できます。ほとんどの場合、<code class="language-plaintext highlighter-rouge">Requesting program interpreter: /lib64/ld-linux-x86-64.so.2</code> と書いてあり、これは、バイナリファイルが指定したローダがそのファイルをメモリ空間にロードすることを意味します。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; readelf -l $(which nvim) | grep INTERP -A 2
+  INTERP         0x0000000000000318 0x0000000000000318 0x0000000000000318
+                 0x000000000000001c 0x000000000000001c  R      0x1
+      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> はバイナリファイルのロード時に 3 つの処理を行います。</p>
+
+<ul>
+  <li>そのバイナリが必要とする共有ライブラリの検索</li>
+  <li>共有ライブラリとバイナリのメモリ空間へのロード</li>
+  <li>共有ライブラリとバイナリ中のシンボル解決</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> の挙動を正確に理解することは重要です。例えば、LD_PRELOAD や LD_AUDIT などの環境変数による便利なハックはその挙動を変更することで実現されています。<code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> の挙動を理解していれば、これらの環境変数で何が可能であり何が不可能かを推測できるようになります。また、共有ライブラリを無理やりリンクする<a href="https://github.com/akawashiro/sold">https://github.com/akawashiro/sold</a> のようなソフトウェアの制作にはその理解が必要不可欠です。</p>
+
+<h2 id="ld-linux-x86-64so2-の問題点"><code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> の問題点</h2>
+
+<p><code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> は GNU libc の一部として Linux にインストールされており、そのソースコードはすべて<a href="https://www.gnu.org/software/libc/sources.html">公開</a>されています。しかし、公開されているソースコードから<code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> の挙動を理解するにあたっては以下の 2 つの問題があります。</p>
+
+<p>1 つ目の問題は、GNU libc のソースコードは読みにくい点です。GNU libc は歴史の長いソフトウェアで C 言語で書かれています。また、x86-64、Alpha、ARM、PowerPC などの複数のアーキテクチャへの移植性を求められます。このため、ソースコードの至る部分でマクロが多用されており、プログラムの流れを追うのが難しくなっています。</p>
+
+<p>2 つ目の問題は、<code class="language-plaintext highlighter-rouge">libc.so</code> の初期化とプログラムのロードが同時に行われていて、ロード部分だけを分離して理解することができない点です。<code class="language-plaintext highlighter-rouge">libc.so</code> とはいわゆる標準 C ライブラリで、バイナリファイルが <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> によってロードされるときはほぼ確実に同時にロードされます。<code class="language-plaintext highlighter-rouge">libc.so</code> と <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> は同じパッケージに存在し、2 つのコンポーネントの役割分担が明示的にドキュメントされていません。このため、<code class="language-plaintext highlighter-rouge">libc.so</code>だけ、もしくはロードだけを分離して理解し、別のソフトウェアに切り出すことは非常に難しくなっています。</p>
+
+<h2 id="sloader">sloader</h2>
+
+<p>上で述べた問題を解決し、<code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>の挙動を理解するために <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> を置き換え可能な新しいローダを開発することにしました。つまり Linux 上で起動するすべてのプログラム(<code class="language-plaintext highlighter-rouge">systemd</code>、<code class="language-plaintext highlighter-rouge">cat</code>、<code class="language-plaintext highlighter-rouge">find</code>、<code class="language-plaintext highlighter-rouge">firefox</code>等)を自分でロードしようとしています。</p>
+
+<p>このローダの名前は <code class="language-plaintext highlighter-rouge">sloader</code> で、リポジトリは <a href="https://github.com/akawashiro/sloader/">https://github.com/akawashiro/sloader/</a> にあります。<code class="language-plaintext highlighter-rouge">sloader</code> の開発にあたっては次の 2 つを原則としています。</p>
+
+<p>1 つ目の原則は、C 言語ではなくモダンな C++を使う、です。C++20 までのモダンな C++の機能を使い可読性を上げようとしています。Rust を採用することも考えたのですが、GNU libc のソースコードを参照しながら開発することを考えると、C 言語との互換性がある言語のほうが良いと判断しました。</p>
+
+<p>2 つ目の原則は、<code class="language-plaintext highlighter-rouge">libc.so</code> の初期化はやらない、です。ロード部分だけを理解するのが目的なので複雑怪奇な <code class="language-plaintext highlighter-rouge">libc.so</code> の初期化はやりません。というよりできませんでした。<code class="language-plaintext highlighter-rouge">libc.so</code> の初期化を開始しつつ <code class="language-plaintext highlighter-rouge">libc.so</code> に依存するプログラムをロードする方法は後ほど説明します。</p>
+
+<h2 id="sloader-の現状">sloader の現状</h2>
+
+<p><code class="language-plaintext highlighter-rouge">sloader</code> は <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> を完全に置き換えるまでにはまだ至っていません。しかし、ある程度までは完成していて、<code class="language-plaintext highlighter-rouge">sloader</code>のビルドに必要なソフトウェアをすべて起動することが可能です。具体的には <code class="language-plaintext highlighter-rouge">cmake</code>、<code class="language-plaintext highlighter-rouge">g++</code>、<code class="language-plaintext highlighter-rouge">ld</code>、<code class="language-plaintext highlighter-rouge">ninja</code>が起動でき、<code class="language-plaintext highlighter-rouge">sloader</code>自身のバイナリを生成できます。</p>
+
+<p>実際に<code class="language-plaintext highlighter-rouge">sloader</code>のバイナリを<code class="language-plaintext highlighter-rouge">sloader</code>を使って生成するスクリプトは <a href="https://github.com/akawashiro/sloader/blob/master/make-sloader-itself.sh">https://github.com/akawashiro/sloader/blob/master/make-sloader-itself.sh</a>です。主要な部分を抜粋しておきます。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sloader cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S . -B build \
+    -D CMAKE_C_COMPILER_LAUNCHER=sloader  -D CMAKE_CXX_COMPILER_LAUNCHER=sloader \
+    -D CMAKE_C_LINKER_LAUNCHER=sloader -D CMAKE_CXX_LINKER_LAUNCHER=sloader
+$ sloader make VERBOSE=1
+</code></pre></div></div>
+
+<p>また、いくつかの GUI アプリケーションを起動することにも成功しています。この画像は <code class="language-plaintext highlighter-rouge">sloader</code> を使って<code class="language-plaintext highlighter-rouge">xeyes</code>、<code class="language-plaintext highlighter-rouge">xconsole</code>、<code class="language-plaintext highlighter-rouge">xcalc</code> を起動した例です。<code class="language-plaintext highlighter-rouge">xeyes</code> は本来六角形ではなく円形の目が表示されるのですが、<code class="language-plaintext highlighter-rouge">sloader</code> の何らかのバグで六角形になっています。
+<img src="./xapps-launched-by-sloader.png" alt="sloaderを使ってGUIアプリケーションを起動する" /></p>
+
+<h2 id="sloader-の実装">sloader の実装</h2>
+
+<h3 id="libcso-内のシンボルの解決">libc.so 内のシンボルの解決</h3>
+
+<p>先程述べたように、<code class="language-plaintext highlighter-rouge">sloader</code> は <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> を置き換えることを目標としています。当然、<code class="language-plaintext highlighter-rouge">sloader</code> でロードしたいプログラムは <code class="language-plaintext highlighter-rouge">libc.so</code> に依存しています。一方、<code class="language-plaintext highlighter-rouge">sloader</code> で <code class="language-plaintext highlighter-rouge">libc.so</code> をロードしません。</p>
+
+<p><code class="language-plaintext highlighter-rouge">sloader</code> では <code class="language-plaintext highlighter-rouge">sloader</code> 自身にリンクされた <code class="language-plaintext highlighter-rouge">libc.so</code> をロードしたプログラムから参照するように再配置情報を解決することでこの問題を解決しています。具体的には<a href="https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/dyn_loader.cc#L621">dyn_loader.cc#L621</a>で <code class="language-plaintext highlighter-rouge">R_X86_64_GLOB_DAT</code> または <code class="language-plaintext highlighter-rouge">R_X86_64_JUMP_SLOT</code> のシンボル名が libc のものの場合、再配置情報で指示されたアドレスに<code class="language-plaintext highlighter-rouge">libc.so</code>のアドレスではなく <a href="https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/libc_mapping.cc#L248">std::map&lt;std::string, Elf64_Addr&gt; sloader_libc_map</a>内の関数ポインタの値を書き込んでいます。</p>
+
+<h3 id="ロードされたプログラムのための-tls-領域の確保">ロードされたプログラムのための TLS 領域の確保</h3>
+
+<p><a href="#libc.so内のシンボルの解決">上</a>で述べたように、<code class="language-plaintext highlighter-rouge">sloader</code>でロードされたプログラムは<code class="language-plaintext highlighter-rouge">sloader</code>自身にリンクされた libc を使うのですが、この手法には別の問題があります。それはロードされたプログラムが Thread Local Storage (TLS) 変数にアクセスすると、<code class="language-plaintext highlighter-rouge">sloader</code> 自身の TLS 領域にアクセスしてしまうという問題です。</p>
+
+<p>この問題は<code class="language-plaintext highlighter-rouge">sloader</code>内にダミーの TLS 領域を確保して回避しています。<a href="https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/tls_secure.cc#L4">tls_secure.cc#L4</a>で 4096 バイトのダミーの TLS 領域を TLS 領域の先頭に定義して、ロードされたプログラムはここを参照するようにしています。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>constexpr int TLS_SPACE_FOR_LOADEE = 4096;
+thread_local unsigned char sloader_dummy_to_secure_tls_space[TLS_SPACE_FOR_LOADEE] = {0, 0, 0, 0};
+</code></pre></div></div>
+
+<p>これで一件落着、のように思えますが、まだ問題が残っています。それは通常の方法でダミーの TLS 領域を TLS 領域の先頭に定義できない点です。現状では<a href="https://github.com/akawashiro/sloader/blob/502bae54b403423f79e04caa4901c4a76cb6aaca/CMakeLists.txt#L32">CMakeLists.txt#L32</a>で<code class="language-plaintext highlighter-rouge">tls_secure.o</code> を最初にリンクすることで無理やり定義していますが、この方法はリンカの実装に依存しています。</p>
+
+<p>更に悪いことにこの最初にリンクする手法は <code class="language-plaintext highlighter-rouge">libc.a</code> をスタティックリンクすると機能しません。このため、現在 <code class="language-plaintext highlighter-rouge">sloader</code> を起動するためには <code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code> が必要という大変恥ずかしい状況になっています。</p>
+
+<h2 id="sloader-の課題">sloader の課題</h2>
+
+<p>まず <a href="#ロードされたプログラムのためのTLS領域の確保">上</a>で述べたように <code class="language-plaintext highlighter-rouge">sloader</code> を<code class="language-plaintext highlighter-rouge">ld-linux-x86-64.so.2</code>なしで起動することができません。この問題は、TLS のダミー領域を確保するハックを別のものに置き換える、もしくはリンカスクリプト等で TLS 領域の先頭に強制的にダミー領域を定義することで解決できるはずです。</p>
+
+<p>次に <code class="language-plaintext highlighter-rouge">sloader</code> で起動できないソフトウェアがまだ多く残っています。neovim や firefox 等は起動すると Segmentation Fault を引き起こします。この原因は未だにわかっていません。</p>
+
+<p>最後に <code class="language-plaintext highlighter-rouge">sloader</code> の再配置処理は遅いです。firefox などの大きめのプログラムの起動には 1 秒以上かかります。ただし、これは単純にパフォーマンスの問題であり、プロファイルを取って改善すれば解決するはずです。</p>
+
+<h2 id="お願い">お願い</h2>
+
+<p><a href="https://github.com/akawashiro/sloader">https://github.com/akawashiro/sloader</a> をスターしてください。励みになります。</p>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>ローダはダイナミックリンカと呼ばれることもありますが、この記事では「ローダ」で統一します。 <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+      </div>
+    </main><footer class="site-footer h-card">
+</footer>
+</body>
+
+</html>
