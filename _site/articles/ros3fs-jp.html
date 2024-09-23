@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム | Akira Kawata</title>
+<meta name="generator" content="Jekyll v4.3.4" />
+<meta property="og:title" content="ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="/articles/ros3fs-jp.html" />
+<meta property="og:url" content="/articles/ros3fs-jp.html" />
+<meta property="og:site_name" content="Akira Kawata" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム","url":"/articles/ros3fs-jp.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Akira Kawata" /></head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Akira Kawata</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+      </nav></div>
+</header>
+
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <h1 id="ros3fs---オブジェクトストレージ用の高速な読み取り専用fuseファイルシステム">ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム</h1>
+
+<p>S3互換のオブジェクトストレージのためのFUSEファイルシステム、<a href="https://github.com/akawashiro/ros3fs">ros3fs (Read Only S3 File System)</a>を作りました。 <a href="https://github.com/akawashiro/ros3fs">ros3fs</a>は読み込み専用かつバケットのデータの更新に追随しないという強い制約を設ける代わりに、高速なデータの閲覧を可能にしています。</p>
+
+<p><img src="./ros3fs-grep.png" alt="grepを使ったバケット内のファイル内容の検索 (ms)" /></p>
+
+<p>(小さすぎてグラフでは見えませんが、キャッシュのウォームアップありのros3fsでは15.2 msでした。)</p>
+
+<h2 id="オブジェクトストレージ">オブジェクトストレージ</h2>
+
+<p><a href="https://aws.amazon.com/s3/">AWS S3</a>や<a href="https://developers.cloudflare.com/r2/">Cloudflare R2</a>、<a href="https://min.io/">MinIO</a>、<a href="https://ozone.apache.org/">Apache Ozone</a>などはオブジェクトストレージと呼ばれるソフトウェアです。オブジェクトストレージはスケーラビリティにすぐれており、<a href="https://aws.amazon.com/s3/">AWS S3</a>や<a href="https://developers.cloudflare.com/r2/">Cloudflare R2</a>などのクラウドサービスとして提供されている場合は手軽に安価に使い始めることができます。</p>
+
+<p>オブジェクトストレージはファイルをオブジェクトという単位で扱います。オブジェクトはフラットな空間に格納され、ディレクトリという概念はありません。アクセスには通常 REST API を使います。<a href="https://aws.amazon.com/s3/">AWS S3</a>が策定した API がよく知られており、<a href="https://developers.cloudflare.com/r2/">Cloudflare R2</a>、<a href="https://min.io/">MinIO</a>、<a href="https://ozone.apache.org/">Apache Ozone</a>はどれも<a href="https://aws.amazon.com/s3/">AWS S3</a>互換の API を実装しています。このため、これらのソフトウェアはすべて<a href="https://docs.aws.amazon.com/cli/latest/reference/s3/">AWS S3 cli</a>経由で利用することができます。</p>
+
+<p><a href="https://aws.amazon.com/s3/">AWS S3</a>を含むオブジェクトストレージは手軽なのですが、一つ欠点があります。それはデータを通常のファイルのように閲覧できない点です。オブジェクトストレージ上のデータを直接<code class="language-plaintext highlighter-rouge">cat</code>や<code class="language-plaintext highlighter-rouge">grep</code>することはできませんし、<a href="https://gitlab.gnome.org/GNOME/nautilus">GNOME Files</a>のような GUI のファイルマネージャで見ることもできません。</p>
+
+<h2 id="fuse">FUSE</h2>
+
+<p>このような問題を解決する一つの方法が<a href="https://www.kernel.org/doc/html/next/filesystems/fuse.html">FUSE</a>です。<a href="https://www.kernel.org/doc/html/next/filesystems/fuse.html">FUSE</a>とは Filesystem in Userspace の略であり、<a href="https://github.com/libfuse/libfuse">Linux</a>、<a href="https://osxfuse.github.io/">Mac OS</a>、Windows<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>で利用できる技術です。</p>
+
+<p><a href="https://www.kernel.org/doc/html/next/filesystems/fuse.html">FUSE</a>を使うとファイルシステムをユーザ空間内に実装できます。このファイルシステムの実装を自由に書くことができるため、例えば<code class="language-plaintext highlighter-rouge">open</code>システムコールを AWS S3 の<a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">GetObject API</a>に結び付けることで、ファイルを開く操作を自動的に S3 のオブジェクトを取得する操作に変換することができます。</p>
+
+<p>また、オブジェクトストレージにはディレクトリ構造がありませんが、FUSE を使って模擬的にそれを実現することも可能です。オブジェクト名を”/”などのパス区切り文字で区切ったものをディレクトリとしてユーザに見せるように FUSE を実装すれば、オブジェクトストレージがディレクトリを持ったファイルシステムのように見せることができます。</p>
+
+<h2 id="既存の-s3-向け-fuse-の問題点">既存の s3 向け FUSE の問題点</h2>
+
+<p>S3 互換の API を持つオブジェクトストレージ向けの FUSEファイルシステム には AWS 本家による<a href="https://github.com/awslabs/mountpoint-s3">mountpoint-s3</a>や<a href="https://github.com/s3fs-fuse/s3fs-fuse">s3fs-fuse</a>などの既存実装があります。どちらを使っても問題なくオブジェクトストレージをファイルシステムとして利用することができます。</p>
+
+<p>しかし、この二つの実装にはどちらも<strong>遅い</strong>という問題点があります。特にディレクトリ構造を走査するような操作は遅く、オブジェクト数の多いバケットを FUSEファイルシステム でマウントして<code class="language-plaintext highlighter-rouge">ls</code>コマンドを打つと体感できる程度の遅延があります。</p>
+
+<h2 id="ros3fs">ros3fs</h2>
+
+<p>この問題を回避して<code class="language-plaintext highlighter-rouge">ls</code>の遅延を最小化するために作ったのが<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>です。<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>は S3 互換のオブジェクトストレージのための FUSEファイルシステム であり、ディレクトリ構造の走査を含む読み出しの遅延を最小化することを目的に設計されています。</p>
+
+<p>Linux で<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>で使うにはビルドする必要があります。Ubuntu 22.04 で ros3fs をビルドする手順は以下の通りです。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>apt-get <span class="nb">install</span> <span class="nt">-y</span> cmake g++ git libfuse3-dev ninja-build zlib1g-dev libcurl4-openssl-dev libssl-dev ccache pkg-config
+<span class="nv">$ </span>git clone https://github.com/akawashiro/ros3fs.git
+<span class="nv">$ </span><span class="nb">cd </span>ros3fs
+<span class="nv">$ </span><span class="nb">mkdir </span>build
+<span class="nv">$ </span>./build-aws-sdk-cpp.sh ./build
+<span class="nv">$ </span>cmake <span class="nt">-S</span> <span class="nb">.</span> <span class="nt">-B</span> build
+<span class="nv">$ </span>cmake <span class="nt">--build</span> build <span class="nt">--</span> <span class="nt">-j</span>
+<span class="nv">$ </span>cmake <span class="nt">--build</span> build <span class="nt">--</span> <span class="nb">install</span>
+</code></pre></div></div>
+
+<p>その後、このコマンドで S3 互換のオブジェクトストレージをマウントできます。AWS SDKを使っているため<code class="language-plaintext highlighter-rouge">AWS_ACCESS_KEY_ID</code>や<code class="language-plaintext highlighter-rouge">AWS_SECRET_ACCESS_KEY</code>で認証情報を設定できます。マウントした後は<code class="language-plaintext highlighter-rouge">&lt;MOUNTPOINT&gt;</code>ディレクトリにオブジェクトストレージのデータがマウントされています。<code class="language-plaintext highlighter-rouge">ls</code>や<code class="language-plaintext highlighter-rouge">cat</code>などのコマンドを使って中身を確認することも可能です。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>./build/ros3fs &lt;MOUNTPOINT&gt; <span class="nt">-f</span> <span class="nt">-d</span> <span class="nt">--endpoint</span><span class="o">=</span>&lt;ENDPOINT URL&gt; <span class="nt">--bucket_name</span><span class="o">=</span>&lt;BUCKET NAME ENDS WITH <span class="s1">'/'</span><span class="o">&gt;</span> <span class="nt">--cache_dir</span><span class="o">=</span>&lt;CACHE DIRECTORY&gt;
+<span class="nv">$ </span><span class="nb">ls</span> &lt;MOUNTPOINT&gt;
+dir_a/  testfile_a  testfile_b  testfile_c
+<span class="nv">$ </span><span class="nb">cat </span>testfile_a
+hoge
+</code></pre></div></div>
+
+<p>先ほど述べたように、<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>は読み出しの遅延を最小化することを目的に設計されています。その代償としていくつかの制限があります。まず書き込みはサポートしません。これは書き込みをサポートすると<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>のキャッシュとオブジェクトストレージの間の整合性をとるのが困難になるためです。</p>
+
+<p>また、<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>はバケットに存在するデータと異なる古いデータを読みだすことがあります。遅延を最小化するために<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>はデータを極端にキャッシュします。まず、<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>は起動時にすべてのオブジェクト名を取得しディレクトリ構造を構築します。また、一度アクセスしたデータはローカルに保存し、二回目以降のアクセスではそのデータを読みます。このため、<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>でバケットをマウントした後にそのバケットのオブジェクトが変更された場合、その変更を読みだせないケースがあります。</p>
+
+<p>このような思い切った設計の背景には、筆者のオブジェクトストレージの使い方があります。筆者はオブジェクトストレージをバックアップデータの保存先として使っており、そのバケットの更新頻度は非常に低いです。一方、バックアップしたデータを参照する頻度は更新頻度に比べて高いです。このため、バケットをマウントした後オブジェクトを変更するケースをサポートしない判断をしました。この判断により、読み取りについてはほかの S3 向けの FUSE と比べて大幅に高速になっています。</p>
+
+<h2 id="性能比較">性能比較</h2>
+
+<p>ローカルに<a href="https://ozone.apache.org/">Apache Ozone</a>のサーバを構築し、1000 個のテキストファイルをバケットに格納してから、FUSEファイルシステム でマウントし<code class="language-plaintext highlighter-rouge">grep</code>で検索した時の性能を比較します。この性能比較は<a href="https://github.com/akawashiro/ros3fs/blob/master/benchmark.sh">benchmark.sh</a>で行いました。</p>
+
+<p><a href="https://github.com/akawashiro/ros3fs">ros3fs</a>はコミットハッシュ<code class="language-plaintext highlighter-rouge">afa6156e753539b7a530be9c7c25cdb987b5ffad</code>、<a href="https://github.com/s3fs-fuse/s3fs-fuse">s3fs-fuse</a>は<code class="language-plaintext highlighter-rouge">V1.90</code>、<a href="https://github.com/awslabs/mountpoint-s3">mountpoint-s3</a>は<code class="language-plaintext highlighter-rouge">v1.0.2</code>を使い、OS は<code class="language-plaintext highlighter-rouge">Ubuntu 22.04.2 LTS</code>、CPU は<code class="language-plaintext highlighter-rouge">AMD Ryzen 9 5950X</code>です。</p>
+
+<p>測定は<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>に含まれるスクリプトを使って行いました。まず、オブジェクトストレージソフトウェアの一つである<a href="https://ozone.apache.org/">Apache Ozone</a>を起動します。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./launch-ozone.sh
+</code></pre></div></div>
+
+<p>次に別のターミナルで<code class="language-plaintext highlighter-rouge">./benchmark.sh</code>を起動するとOzoneにバケット、オブジェクトを作成し、各FUSEファイルシステムでマウントした上で測定を行います。</p>
+
+<details><summary>`./benchmark.sh` の実行結果の例</summary>
+
+```bash
+./benchmark.sh
+# 省略
+========== Compare grep performance without cache warmup ==========
+time grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/ros3fs_mountpoint -e 123
+
+real    0m3.046s
+user    0m0.000s
+sys     0m0.021s
+time grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/s3fs-fuse_mountpoint -e 123
+
+real    0m2.042s
+user    0m0.005s
+sys     0m0.016s
+time grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/mountpoint-s3_mountpoint -e 123
+
+real    0m8.660s
+user    0m0.004s
+sys     0m0.024s
+============================================================
+========== Compare grep performance with cache warmup ==========
+Benchmark 1: grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/ros3fs_mountpoint -e '123'
+  Time (mean ± σ):      15.2 ms ±   1.1 ms    [User: 1.9 ms, System: 4.1 ms]
+  Range (min … max):    12.7 ms …  17.0 ms    10 runs
+
+Benchmark 1: grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/s3fs-fuse_mountpoint -e '123'
+  Time (mean ± σ):      2.056 s ±  0.028 s    [User: 0.004 s, System: 0.019 s]
+  Range (min … max):    2.009 s …  2.112 s    10 runs
+
+Benchmark 1: grep -r /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/mountpoint-s3_mountpoint -e '123'
+  Time (mean ± σ):     10.866 s ±  2.068 s    [User: 0.007 s, System: 0.023 s]
+  Range (min … max):    8.913 s … 14.761 s    10 runs
+
+=========================================================
+========== Compare find performance without cache warmup ==========                                                                                                time find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/ros3fs_mountpoint
+
+real    0m0.022s
+user    0m0.005s
+sys     0m0.000s
+time find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/s3fs-fuse_mountpoint
+
+real    0m0.090s
+user    0m0.001s
+sys     0m0.000s
+time find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/mountpoint-s3_mountpoint
+
+real    0m0.045s
+user    0m0.000s
+sys     0m0.003s
+============================================================
+========== Compare find performance with cache warmup ==========
+Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/ros3fs_mountpoint
+  Time (mean ± σ):       4.0 ms ±   0.2 ms    [User: 1.1 ms, System: 0.4 ms]
+  Range (min … max):     3.7 ms …   4.5 ms    10 runs
+
+  Warning: Command took less than 5 ms to complete. Results might be inaccurate.
+
+Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/s3fs-fuse_mountpoint
+  Time (mean ± σ):      22.5 ms ±   1.9 ms    [User: 0.8 ms, System: 0.3 ms]
+  Range (min … max):    19.2 ms …  26.0 ms    10 runs
+
+Benchmark 1: find /home/akira/ghq/github.com/akawashiro/ros3fs/build_benchmark/mountpoint-s3_mountpoint
+  Time (mean ± σ):      43.8 ms ±   2.5 ms    [User: 1.1 ms, System: 0.4 ms]
+  Range (min … max):    41.2 ms …  49.3 ms    10 runs
+
+=========================================================
+```
+
+</details>
+
+<p><img src="./ros3fs-grep.png" alt="grepを使ったバケット内のファイル内容の検索 (ms)" /></p>
+
+<p>小さすぎてグラフでは見えませんが、キャッシュのウォームアップありのros3fsでは15.2 msでした。</p>
+
+<p><img src="./ros3fs-find.png" alt="findを使ったバケット内のファイルの列挙" /></p>
+
+<p>キャッシュのウォームアップがあると<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>が圧倒的に高速に動作します。ローカルにすべてのデータを保存するためこの結果はごく自然です。</p>
+
+<h2 id="今後の課題">今後の課題</h2>
+
+<p><a href="https://github.com/akawashiro/ros3fs">ros3fs</a>の実装の成熟度は、僕が普段使いできる程度でしかなく、明らかな問題がいくつかあります。一つ目はエラーハンドリングの甘さです。ユーザ空間で動かし想定外の挙動をした場合はエラーメッセージを出してすぐに終了するようになっています。特に、S3 APIのエラーが返ってきた場合は何もせずに終了していますが、本来はエラーコードを見て適切にハンドリングする必要があります。二つ目はキャッシュの容量制限がないことです。<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>は一度アクセスしたオブジェクトをローカルにキャッシュとして保存しますが、このキャッシュに容量制限がありません。一定時間ごとにキャッシュをクリアする機能はありますが、容量制限をかけて最もアクセス日時が古いものを削除するような機能が必要です。</p>
+
+<h2 id="まとめ">まとめ</h2>
+
+<p>S3 互換のオブジェクトストレージのための FUSEファイルシステム、<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>を実装しました。<a href="https://github.com/akawashiro/ros3fs">ros3fs</a>は読み込み専用かつバケットのデータの更新を反映しないという強い制約のもとではありますが、既存実装に比べて非常に高速なデータの閲覧が可能にしました。</p>
+
+<h2 id="お願い">お願い</h2>
+
+<p><a href="https://github.com/akawashiro/ros3fs">https://github.com/akawashiro/ros3fs</a> をスターしてください。励みになります。</p>
+
+<h2 id="連絡先">連絡先</h2>
+
+<p>この記事に誤りがあった場合は<a href="https://twitter.com/a_kawashiro">Twitter</a>、<a href="https://mstdn.jp/@a_kawashiro">Mastodon</a>等で連絡をください。修正します。その他の連絡先は <a href="https://akawashiro.com/">https://akawashiro.com/</a> にあります。</p>
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>Windows で FUSEファイルシステム を利用するのはあまり一般的ではないようです。<a href="https://github.com/winfsp/winfsp">WinFsp</a>がありますが使ったことはありません。 <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+      </div>
+    </main><footer class="site-footer h-card">
+</footer>
+</body>
+
+</html>

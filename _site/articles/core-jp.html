@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>コアダンプファイル | Akira Kawata</title>
+<meta name="generator" content="Jekyll v4.3.4" />
+<meta property="og:title" content="コアダンプファイル" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="/articles/core-jp.html" />
+<meta property="og:url" content="/articles/core-jp.html" />
+<meta property="og:site_name" content="Akira Kawata" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="コアダンプファイル" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"コアダンプファイル","url":"/articles/core-jp.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Akira Kawata" /></head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Akira Kawata</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+      </nav></div>
+</header>
+
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <h2 id="コアダンプファイルとは何">コアダンプファイルとは何?</h2>
+
+<ul>
+  <li>プログラムがクラッシュしたときにでるやつ</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./run.sh: line 13: 383833 Segmentation fault      (core dumped) ./make_core
+</code></pre></div></div>
+
+<ul>
+  <li><a href="https://linuxjm.osdn.jp/html/LDP_man-pages/man5/core.5.html">man 5 core</a> より抜粋
+    <blockquote>
+      <p>ある種のシグナルを受けた場合のデフォルトのアクションは、 プロセスを終了し (terminate)、 コアダンプファイル (core dump file) を生成することである。コアダンプファイルは、ディスク上に生成される 終了時のプロセスのメモリーイメージを内容とするファイルである。 このイメージをデバッガ (例えば gdb(1)) に読み込んで、 プログラムが終了した時点のプログラムの状態を検査することができる。 どのシグナルを受けたときにプロセスがコアダンプを生成するかのリストは signal(7) に書かれている。</p>
+    </blockquote>
+  </li>
+  <li>使い方
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">gdb &lt;プログラムへのパス&gt; &lt;コアダンプファイルへのパス&gt;</code></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="gdb-の限界">gdb の限界</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">gdb</code> は壊れたプログラムを処理できない
+    <ul>
+      <li>sold の出力結果を入れると <code class="language-plaintext highlighter-rouge">gdb</code> 自身のコアができる</li>
+    </ul>
+  </li>
+  <li><code class="language-plaintext highlighter-rouge">gdb</code> を使わずにコアダンプファイルが読みたいので読んでみました</li>
+</ul>
+
+<h2 id="コアダンプファイルのフォーマット">コアダンプファイルのフォーマット</h2>
+
+<ul>
+  <li>コアダンプファイルはただの ELF ファイル</li>
+  <li>ELF ヘッダの <code class="language-plaintext highlighter-rouge">e_type</code> フィールドが <code class="language-plaintext highlighter-rouge">ET_CORE</code> になっている</li>
+  <li>プログラムヘッダテーブルは
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">pt_type == PT_LOAD</code> のものはクラッシュしたときのメモリの内容を表す</li>
+      <li><code class="language-plaintext highlighter-rouge">pt_type == PT_NOTE</code> のものはレジスタの値やプロセスの情報が入っている</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="デモ">デモ</h2>
+
+<h3 id="コアダンプファイルを生成するためのプログラム">コアダンプファイルを生成するためのプログラム</h3>
+
+<ul>
+  <li>範囲外アクセスで コアダンプファイルを生成する C のプログラムをつくる。</li>
+  <li>解析を簡単にするため、範囲外アクセスの前に <code class="language-plaintext highlighter-rouge">/proc/self/maps</code> を出力しておく。</li>
+</ul>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;stdint.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span>
+<span class="kt">uint64_t</span> <span class="n">a</span> <span class="o">=</span> <span class="mh">0xaaaabbbbccccdddd</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+  <span class="c1">// Print all lines in /proc/self/maps</span>
+  <span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">"/proc/self/maps"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">);</span>
+  <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mh">0x1000</span><span class="p">];</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">fgets</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span> <span class="n">fp</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"%s"</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mh">0x100000</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="o">*</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="mh">0xdeadbeefdeadbeef</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>コンパイルする。</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gcc <span class="nt">-o</span> ./make_core ./make_core.c
+</code></pre></div></div>
+
+<h3 id="コアダンプファイルを生成">コアダンプファイルを生成</h3>
+
+<ul>
+  <li>コアダンプファイルの生成場所を指定しておく。</li>
+  <li>コアダンプファイルのサイズ制限を外す。</li>
+  <li>ASLR は切っておく。</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>bash <span class="nt">-c</span> <span class="s1">'echo core.%t &gt; /proc/sys/kernel/core_pattern'</span>
+<span class="nv">$ </span><span class="nb">ulimit</span> <span class="nt">-c</span> unlimited
+<span class="nv">$ </span><span class="nb">echo </span>0 | <span class="nb">sudo tee</span> /proc/sys/kernel/randomize_va_space
+<span class="nv">$ </span>./make_core
+555555554000-555555555000 r--p 00000000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555555000-555555556000 r-xp 00001000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555556000-555555557000 r--p 00002000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555557000-555555558000 r--p 00002000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555558000-555555559000 rw-p 00003000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555559000-55555557a000 rw-p 00000000 00:00 0                          <span class="o">[</span>heap]
+7ffff7c00000-7ffff7c28000 r--p 00000000 103:01 2386144                   /usr/lib/x86_64-linux-gnu/libc.so.6
+7ffff7c28000-7ffff7dbd000 r-xp 00028000 103:01 2386144                   /usr/lib/x86_64-linux-gnu/libc.so.6
+7ffff7dbd000-7ffff7e15000 r--p 001bd000 103:01 2386144                   /usr/lib/x86_64-linux-gnu/libc.so.6
+7ffff7e15000-7ffff7e19000 r--p 00214000 103:01 2386144                   /usr/lib/x86_64-linux-gnu/libc.so.6
+7ffff7e19000-7ffff7e1b000 rw-p 00218000 103:01 2386144                   /usr/lib/x86_64-linux-gnu/libc.so.6
+7ffff7e1b000-7ffff7e28000 rw-p 00000000 00:00 0
+7ffff7fa5000-7ffff7fa8000 rw-p 00000000 00:00 0
+7ffff7fbb000-7ffff7fbd000 rw-p 00000000 00:00 0
+7ffff7fbd000-7ffff7fc1000 r--p 00000000 00:00 0                          <span class="o">[</span>vvar]
+7ffff7fc1000-7ffff7fc3000 r-xp 00000000 00:00 0                          <span class="o">[</span>vdso]
+7ffff7fc3000-7ffff7fc5000 r--p 00000000 103:01 2385802                   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ffff7fc5000-7ffff7fef000 r-xp 00002000 103:01 2385802                   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ffff7fef000-7ffff7ffa000 r--p 0002c000 103:01 2385802                   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ffff7ffb000-7ffff7ffd000 r--p 00037000 103:01 2385802                   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ffff7ffd000-7ffff7fff000 rw-p 00039000 103:01 2385802                   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7ffffffdd000-7ffffffff000 rw-p 00000000 00:00 0                          <span class="o">[</span>stack]
+ffffffffff600000-ffffffffff601000 <span class="nt">--xp</span> 00000000 00:00 0                  <span class="o">[</span>vsyscall]
+</code></pre></div></div>
+
+<h3 id="readelf-を使ったコアダンプファイルの解析">readelf を使ったコアダンプファイルの解析</h3>
+
+<ul>
+  <li>コアダンプファイルのセグメントを見てみる。</li>
+  <li>バッファオーバーランでどこを書こうとして Segmentation fault がおきたのかをしらべる。
+    <ul>
+      <li>RW がついているのがグローバル変数のおいてあるセクションのはず。</li>
+      <li><code class="language-plaintext highlighter-rouge">/proc/self/maps</code> をみると <code class="language-plaintext highlighter-rouge">555555559000-55555557a000</code> が <code class="language-plaintext highlighter-rouge">heap</code> になっている。</li>
+      <li><code class="language-plaintext highlighter-rouge">LOAD           0x0000000000004000 0x0000555555558000 0x0000000000000000</code> があやしいと分かった。</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ CORE_FILENAME</span><span class="o">=</span><span class="si">$(</span>find <span class="nb">.</span> | <span class="nb">grep</span> <span class="s2">"^./core.*"</span> | <span class="nb">sort</span> <span class="nt">-R</span> | <span class="nb">head</span> <span class="nt">-n</span> 1<span class="si">)</span>
+<span class="nv">$ </span>readelf <span class="nt">-l</span> <span class="k">${</span><span class="nv">CORE_FILENAME</span><span class="k">}</span>
+Elf file <span class="nb">type </span>is CORE <span class="o">(</span>Core file<span class="o">)</span>
+Entry point 0x0
+There are 24 program headers, starting at offset 64
+
+Program Headers:
+  Type           Offset             VirtAddr           PhysAddr
+                 FileSiz            MemSiz              Flags  Align
+  NOTE           0x0000000000000580 0x0000000000000000 0x0000000000000000
+                 0x00000000000013f8 0x0000000000000000         0x0
+  LOAD           0x0000000000002000 0x0000555555554000 0x0000000000000000
+                 0x0000000000001000 0x0000000000001000  R      0x1000
+  LOAD           0x0000000000003000 0x0000555555555000 0x0000000000000000
+                 0x0000000000000000 0x0000000000001000  R E    0x1000
+  LOAD           0x0000000000003000 0x0000555555556000 0x0000000000000000
+                 0x0000000000000000 0x0000000000001000  R      0x1000
+  LOAD           0x0000000000003000 0x0000555555557000 0x0000000000000000
+                 0x0000000000001000 0x0000000000001000  R      0x1000
+  LOAD           0x0000000000004000 0x0000555555558000 0x0000000000000000
+                 0x0000000000001000 0x0000000000001000  RW     0x1000
+  LOAD           0x0000000000005000 0x0000555555559000 0x0000000000000000
+                 0x0000000000021000 0x0000000000021000  RW     0x1000
+  LOAD           0x0000000000026000 0x00007ffff7c00000 0x0000000000000000
+                 0x0000000000001000 0x0000000000028000  R      0x1000
+  LOAD           0x0000000000027000 0x00007ffff7c28000 0x0000000000000000
+                 0x0000000000000000 0x0000000000195000  R E    0x1000
+  LOAD           0x0000000000027000 0x00007ffff7dbd000 0x0000000000000000
+                 0x0000000000000000 0x0000000000058000  R      0x1000
+  LOAD           0x0000000000027000 0x00007ffff7e15000 0x0000000000000000
+                 0x0000000000004000 0x0000000000004000  R      0x1000
+  LOAD           0x000000000002b000 0x00007ffff7e19000 0x0000000000000000
+                 0x0000000000002000 0x0000000000002000  RW     0x1000
+  LOAD           0x000000000002d000 0x00007ffff7e1b000 0x0000000000000000
+                 0x000000000000d000 0x000000000000d000  RW     0x1000
+  LOAD           0x000000000003a000 0x00007ffff7fa5000 0x0000000000000000
+                 0x0000000000003000 0x0000000000003000  RW     0x1000
+  LOAD           0x000000000003d000 0x00007ffff7fbb000 0x0000000000000000
+                 0x0000000000002000 0x0000000000002000  RW     0x1000
+  LOAD           0x000000000003f000 0x00007ffff7fbd000 0x0000000000000000
+                 0x0000000000004000 0x0000000000004000  R      0x1000
+  LOAD           0x0000000000043000 0x00007ffff7fc1000 0x0000000000000000
+                 0x0000000000002000 0x0000000000002000  R E    0x1000
+  LOAD           0x0000000000045000 0x00007ffff7fc3000 0x0000000000000000
+                 0x0000000000001000 0x0000000000002000  R      0x1000
+  LOAD           0x0000000000046000 0x00007ffff7fc5000 0x0000000000000000
+                 0x0000000000000000 0x000000000002a000  R E    0x1000
+  LOAD           0x0000000000046000 0x00007ffff7fef000 0x0000000000000000
+                 0x0000000000000000 0x000000000000b000  R      0x1000
+  LOAD           0x0000000000046000 0x00007ffff7ffb000 0x0000000000000000
+                 0x0000000000002000 0x0000000000002000  R      0x1000
+  LOAD           0x0000000000048000 0x00007ffff7ffd000 0x0000000000000000
+                 0x0000000000002000 0x0000000000002000  RW     0x1000
+  LOAD           0x000000000004a000 0x00007ffffffdd000 0x0000000000000000
+                 0x0000000000022000 0x0000000000022000  RW     0x1000
+  LOAD           0x000000000006c000 0xffffffffff600000 0x0000000000000000
+                 0x0000000000001000 0x0000000000001000    E    0x1000
+</code></pre></div></div>
+
+<h3 id="バイナリエディタを使ったコアダンプファイルの解析">バイナリエディタを使ったコアダンプファイルの解析</h3>
+
+<ul>
+  <li>怪しいところをバイナリエディタで見てみる。</li>
+  <li>バッファオーバーランで<code class="language-plaintext highlighter-rouge">0xdeadbeefdeadbeef</code> を書きつぶして、プログラムの先頭まで書いてページのアクセス違反で落ちたことがわかる。
+    <ul>
+      <li>通常プログラムの自体は RX でロードされる。</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ xxd -s 0x3000 -l 0x100000 ${CORE_FILENAME}
+00003000: 0100 0200 7200 2f70 726f 632f 7365 6c66  ....r./proc/self
+00003010: 2f6d 6170 7300 2573 0000 0000 011b 033b  /maps.%s.......;
+00003020: 3000 0000 0500 0000 04f0 ffff 6400 0000  0...........d...
+
+============================= 省略 ================================
+
+00003fe0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+00003ff0: 0000 0000 0000 0000 a059 c4f7 ff7f 0000  .........Y......
+00004000: 0000 0000 0000 0000 0880 5555 5555 0000  ..........UUUU..
+00004010: efbe adde efbe adde efbe adde efbe adde  ................
+00004020: efbe adde efbe adde efbe adde efbe adde  ................
+
+============================= 省略 ================================
+
+00025fe0: efbe adde efbe adde efbe adde efbe adde  ................
+00025ff0: efbe adde efbe adde efbe adde efbe adde  ................
+00026000: 7f45 4c46 0201 0103 0000 0000 0000 0000  .ELF............
+00026010: 0300 3e00 0100 0000 509f 0200 0000 0000  ..&gt;.....P.......
+00026020: 4000 0000 0000 0000 f0c0 2100 0000 0000  @.........!.....
+
+============================= 省略 ================================
+
+0006cfe0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+0006cff0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+</code></pre></div></div>
+
+<h3 id="コアダンプファイルの-pt_note-の中身">コアダンプファイルの <code class="language-plaintext highlighter-rouge">PT_NOTE</code> の中身</h3>
+
+<ul>
+  <li>コアダンプファイルの <code class="language-plaintext highlighter-rouge">PT_NOTE</code> を見てみる。</li>
+  <li><code class="language-plaintext highlighter-rouge">NT_X86_XSTATE</code> という気になるパートがある。
+    <ul>
+      <li><a href="https://zenn.dev/tanakmura/articles/8af62a260ff05d">tanakmura さんが書いた xsave/xrstor についての記事</a> に詳細がある。</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>readelf <span class="nt">--note</span> ./core.1687577511.931088
+
+Displaying notes found at file offset 0x00000580 with length 0x000013f8:
+  Owner                Data size 	Description
+  CORE                 0x00000150	NT_PRSTATUS <span class="o">(</span>prstatus structure<span class="o">)</span>
+  CORE                 0x00000088	NT_PRPSINFO <span class="o">(</span>prpsinfo structure<span class="o">)</span>
+  CORE                 0x00000080	NT_SIGINFO <span class="o">(</span>siginfo_t data<span class="o">)</span>
+  CORE                 0x00000150	NT_AUXV <span class="o">(</span>auxiliary vector<span class="o">)</span>
+  CORE                 0x00000439	NT_FILE <span class="o">(</span>mapped files<span class="o">)</span>
+    Page size: 4096
+                 Start                 End         Page Offset
+    0x0000555555554000  0x0000555555555000  0x0000000000000000
+        /home/akira/ghq/github.com/akawashiro/misc/core/make_core
+    0x0000555555555000  0x0000555555556000  0x0000000000000001
+        /home/akira/ghq/github.com/akawashiro/misc/core/make_core
+    0x0000555555556000  0x0000555555557000  0x0000000000000002
+        /home/akira/ghq/github.com/akawashiro/misc/core/make_core
+    0x0000555555557000  0x0000555555558000  0x0000000000000002
+        /home/akira/ghq/github.com/akawashiro/misc/core/make_core
+    0x0000555555558000  0x0000555555559000  0x0000000000000003
+        /home/akira/ghq/github.com/akawashiro/misc/core/make_core
+    0x00007ffff7c00000  0x00007ffff7c28000  0x0000000000000000
+        /usr/lib/x86_64-linux-gnu/libc.so.6
+    0x00007ffff7c28000  0x00007ffff7dbd000  0x0000000000000028
+        /usr/lib/x86_64-linux-gnu/libc.so.6
+    0x00007ffff7dbd000  0x00007ffff7e15000  0x00000000000001bd
+        /usr/lib/x86_64-linux-gnu/libc.so.6
+    0x00007ffff7e15000  0x00007ffff7e19000  0x0000000000000214
+        /usr/lib/x86_64-linux-gnu/libc.so.6
+    0x00007ffff7e19000  0x00007ffff7e1b000  0x0000000000000218
+        /usr/lib/x86_64-linux-gnu/libc.so.6
+    0x00007ffff7fc3000  0x00007ffff7fc5000  0x0000000000000000
+        /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+    0x00007ffff7fc5000  0x00007ffff7fef000  0x0000000000000002
+        /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+    0x00007ffff7fef000  0x00007ffff7ffa000  0x000000000000002c
+        /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+    0x00007ffff7ffb000  0x00007ffff7ffd000  0x0000000000000037
+        /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+    0x00007ffff7ffd000  0x00007ffff7fff000  0x0000000000000039
+        /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+  CORE                 0x00000200	NT_FPREGSET <span class="o">(</span>floating point registers<span class="o">)</span>
+  LINUX                0x00000988	NT_X86_XSTATE <span class="o">(</span>x86 XSAVE extended state<span class="o">)</span>
+   description data: 7f 03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 1f 00 00 ff ff 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff 00 00 00 00 00 ff ff ff 00 ff ff ff 66 66 66 66 66 66 66 36 30 31 30 30 30 20 2d 2d 2f 61 6b 61 77 61 73 68 69 72 6f 2f 6d 69 73 63 20 20 20 20 20 20 2f 68 6f 6d 65 2f 61 6b 69 72 33 30 30 30 20 31 30 33 3a 30 31 20 34 33 31 35 35 35 35 35 35 38 30 30 30 2d 35 35 35 35 35 35 00 00 00 00 01 1b 03 3b 30 00 00 00 05 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 54 55 55 55 00 00 00 00
+</code></pre></div></div>
+
+<h3 id="コアダンプファイルをパースするプログラム">コアダンプファイルをパースするプログラム</h3>
+
+<ul>
+  <li>コアダンプファイル自体をパースする C++のプログラムをつくる。
+    <ul>
+      <li>Process ID と RIP(プログラムカウンタ)を表示する。</li>
+      <li><code class="language-plaintext highlighter-rouge">prstatus_t</code> 構造体にいろいろ入っている
+        <ul>
+          <li><a href="https://elixir.bootlin.com/linux/v4.7/source/include/uapi/linux/elfcore.h#L94">linux/elfcore.h</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;cstdint&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;elf.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;fcntl.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;memory.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;string.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;sys/mman.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;sys/procfs.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;sys/user.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;unistd.h&gt;</span><span class="cp">
+</span>
+<span class="cp">#include</span> <span class="cpf">&lt;string&gt;</span><span class="cp">
+</span>
+<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="nf">ShowNT</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">type</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">NT_PRSTATUS</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s">"NT_PRSTATUS"</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">NT_PRFPREG</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s">"NT_PRFPREG"</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">NT_PRPSINFO</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s">"NT_PRPSINFO"</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">NT_TASKSTRUCT</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s">"NT_TASKSTRUCT"</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">NT_AUXV</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s">"NT_AUXV"</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">NT_FILE</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s">"NT_FILE"</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">NT_SIGINFO</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s">"NT_SIGINFO"</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">NT_X86_XSTATE</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s">"NT_X86_XSTATE"</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s">"Unknown"</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="k">const</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Usage: %s &lt;path to core file&gt;</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+  <span class="p">}</span>
+
+  <span class="kt">int</span> <span class="n">fd</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">O_RDONLY</span><span class="p">);</span>
+  <span class="kt">size_t</span> <span class="n">size</span> <span class="o">=</span> <span class="n">lseek</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">SEEK_END</span><span class="p">);</span>
+  <span class="kt">size_t</span> <span class="n">mapped_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">size</span> <span class="o">+</span> <span class="mh">0xfff</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="mh">0xfff</span><span class="p">;</span>
+  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">head</span> <span class="o">=</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*&gt;</span><span class="p">(</span>
+      <span class="n">mmap</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="n">mapped_size</span><span class="p">,</span> <span class="n">PROT_READ</span> <span class="o">|</span> <span class="n">PROT_WRITE</span><span class="p">,</span> <span class="n">MAP_PRIVATE</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>
+
+  <span class="k">const</span> <span class="n">Elf64_Ehdr</span> <span class="o">*</span><span class="n">ehdr</span> <span class="o">=</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">Elf64_Ehdr</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">head</span><span class="p">);</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">pi</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">pi</span> <span class="o">&lt;</span> <span class="n">ehdr</span><span class="o">-&gt;</span><span class="n">e_phnum</span><span class="p">;</span> <span class="n">pi</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">const</span> <span class="n">Elf64_Phdr</span> <span class="o">*</span><span class="n">phdr</span> <span class="o">=</span>
+        <span class="p">(</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">Elf64_Phdr</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">head</span> <span class="o">+</span> <span class="n">ehdr</span><span class="o">-&gt;</span><span class="n">e_phoff</span><span class="p">))</span> <span class="o">+</span> <span class="n">pi</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">phdr</span><span class="o">-&gt;</span><span class="n">p_type</span> <span class="o">==</span> <span class="n">PT_NOTE</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kt">size_t</span> <span class="n">offset_in_note</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+      <span class="k">while</span> <span class="p">(</span><span class="n">offset_in_note</span> <span class="o">&lt;</span> <span class="n">phdr</span><span class="o">-&gt;</span><span class="n">p_filesz</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">note</span> <span class="o">=</span> <span class="n">head</span> <span class="o">+</span> <span class="n">phdr</span><span class="o">-&gt;</span><span class="n">p_offset</span> <span class="o">+</span> <span class="n">offset_in_note</span><span class="p">;</span>
+        <span class="kt">int32_t</span> <span class="n">name_size</span> <span class="o">=</span>
+            <span class="p">(</span><span class="o">*</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="kt">int32_t</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">note</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span><span class="p">;</span>
+        <span class="kt">int32_t</span> <span class="n">desc_size</span> <span class="o">=</span>
+            <span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="kt">int32_t</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">note</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span><span class="p">;</span>
+        <span class="kt">uint32_t</span> <span class="n">type</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="kt">uint32_t</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">note</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">);</span>
+        <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span> <span class="o">=</span> <span class="n">note</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">3</span><span class="p">;</span>
+        <span class="c1">// printf("name_size: %x desc_size: %x name: %s type: %s\n", name_size,</span>
+        <span class="c1">//        desc_size, name, ShowNT(type).c_str());</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">NT_PRSTATUS</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">const</span> <span class="n">prstatus_t</span> <span class="o">*</span><span class="n">prstatus</span> <span class="o">=</span>
+              <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">prstatus_t</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">note</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">name_size</span><span class="p">);</span>
+          <span class="n">printf</span><span class="p">(</span><span class="s">"prstatus-&gt;pr_pid: %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">prstatus</span><span class="o">-&gt;</span><span class="n">pr_pid</span><span class="p">);</span>
+          <span class="k">const</span> <span class="k">struct</span> <span class="nc">user_regs_struct</span> <span class="o">*</span><span class="n">regs</span> <span class="o">=</span>
+              <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="k">struct</span> <span class="nc">user_regs_struct</span> <span class="o">*&gt;</span><span class="p">(</span>
+                  <span class="n">prstatus</span><span class="o">-&gt;</span><span class="n">pr_reg</span><span class="p">);</span>
+          <span class="n">printf</span><span class="p">(</span><span class="s">"regs-&gt;rip: %llx</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">regs</span><span class="o">-&gt;</span><span class="n">rip</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="n">offset_in_note</span> <span class="o">+=</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">name_size</span> <span class="o">+</span> <span class="n">desc_size</span><span class="p">;</span>
+        <span class="c1">// printf("phdr-&gt;p_filesz : %lx offset_in_note: %lx\n", phdr-&gt;p_filesz,</span>
+        <span class="c1">//        offset_in_note);</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="実行してみる">実行してみる</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>g++ <span class="nt">-o</span> ./parse_core ./parse_core.cc
+<span class="nv">$ </span>./parse_core <span class="k">${</span><span class="nv">CORE_FILENAME</span><span class="k">}</span>
+prstatus-&gt;pr_pid: 931088
+regs-&gt;rip: 55555555528f
+</code></pre></div></div>
+
+<ul>
+  <li>PID は 931088。</li>
+  <li>Segmentation fault が起きた RIP は 55555555528f と分かった。</li>
+</ul>
+
+<h3 id="プログラムがクラッシュした命令を知りたい">プログラムがクラッシュした命令を知りたい</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">55555555528f</code> に対応するのは <code class="language-plaintext highlighter-rouge">555555555000-555555556000</code> の部分。</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>555555554000-555555555000 r--p 00000000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555555000-555555556000 r-xp 00001000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555556000-555555557000 r--p 00002000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555557000-555555558000 r--p 00002000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+555555558000-555555559000 rw-p 00003000 103:01 44838307                  /home/akira/ghq/github.com/akawashiro/akawashiro.github.io/articles/core/make_core
+</code></pre></div></div>
+
+<ul>
+  <li>セグメントヘッダの情報を合わせて考えると、<code class="language-plaintext highlighter-rouge">55555555528f</code> は <code class="language-plaintext highlighter-rouge">55555555528f - 555555554000 = 128f</code> に対応している。</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ readelf -l make_core
+
+Elf file type is DYN (Position-Independent Executable file)
+Entry point 0x10e0
+There are 13 program headers, starting at offset 64
+
+Program Headers:
+  Type           Offset             VirtAddr           PhysAddr
+                 FileSiz            MemSiz              Flags  Align
+  PHDR           0x0000000000000040 0x0000000000000040 0x0000000000000040
+                 0x00000000000002d8 0x00000000000002d8  R      0x8
+  INTERP         0x0000000000000318 0x0000000000000318 0x0000000000000318
+                 0x000000000000001c 0x000000000000001c  R      0x1
+      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
+  LOAD           0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000730 0x0000000000000730  R      0x1000
+  LOAD           0x0000000000001000 0x0000000000001000 0x0000000000001000
+                 0x00000000000002d1 0x00000000000002d1  R E    0x1000
+  LOAD           0x0000000000002000 0x0000000000002000 0x0000000000002000
+                 0x00000000000000fc 0x00000000000000fc  R      0x1000
+  LOAD           0x0000000000002d98 0x0000000000003d98 0x0000000000003d98
+                 0x0000000000000280 0x0000000000000288  RW     0x1000
+  DYNAMIC        0x0000000000002da8 0x0000000000003da8 0x0000000000003da8
+                 0x00000000000001f0 0x00000000000001f0  RW     0x8
+  NOTE           0x0000000000000338 0x0000000000000338 0x0000000000000338
+                 0x0000000000000030 0x0000000000000030  R      0x8
+  NOTE           0x0000000000000368 0x0000000000000368 0x0000000000000368
+                 0x0000000000000044 0x0000000000000044  R      0x4
+  GNU_PROPERTY   0x0000000000000338 0x0000000000000338 0x0000000000000338
+                 0x0000000000000030 0x0000000000000030  R      0x8
+  GNU_EH_FRAME   0x000000000000201c 0x000000000000201c 0x000000000000201c
+                 0x0000000000000034 0x0000000000000034  R      0x4
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RW     0x10
+  GNU_RELRO      0x0000000000002d98 0x0000000000003d98 0x0000000000003d98
+                 0x0000000000000268 0x0000000000000268  R      0x1
+
+ Section to Segment mapping:
+  Segment Sections...
+   00
+   01     .interp
+   02     .interp .note.gnu.property .note.gnu.build-id .note.ABI-tag .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rela.dyn .rela.plt
+   03     .init .plt .plt.got .plt.sec .text .fini
+   04     .rodata .eh_frame_hdr .eh_frame
+   05     .init_array .fini_array .dynamic .got .data .bss
+   06     .dynamic
+   07     .note.gnu.property
+   08     .note.gnu.build-id .note.ABI-tag
+   09     .note.gnu.property
+   10     .eh_frame_hdr
+   11
+   12     .init_array .fini_array .dynamic .got
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">128f</code> 周辺をディスアセンブルしてみると確かに <code class="language-plaintext highlighter-rouge">0xdeadbeefdeadbeef</code> を書き込んでいそうなことがわかる。</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>objdump <span class="nt">-d</span> make_core | <span class="nb">grep </span>128f <span class="nt">-A</span> 10 <span class="nt">-B</span> 10
+    125f:       48 c7 85 e0 ef ff ff    movq   <span class="nv">$0x0</span>,-0x1020<span class="o">(</span>%rbp<span class="o">)</span>
+    1266:       00 00 00 00
+    126a:       eb 2e                   jmp    129a &lt;main+0xd1&gt;
+    126c:       48 8b 85 e0 ef ff ff    mov    <span class="nt">-0x1020</span><span class="o">(</span>%rbp<span class="o">)</span>,%rax
+    1273:       48 8d 14 c5 00 00 00    lea    0x0<span class="o">(</span>,%rax,8<span class="o">)</span>,%rdx
+    127a:       00
+    127b:       48 8d 05 8e 2d 00 00    lea    0x2d8e<span class="o">(</span>%rip<span class="o">)</span>,%rax        <span class="c"># 4010 &lt;a&gt;</span>
+    1282:       48 01 d0                add    %rdx,%rax
+    1285:       48 b9 ef be ad de ef    movabs <span class="nv">$0xdeadbeefdeadbeef</span>,%rcx
+    128c:       be ad de
+    128f:       48 89 08                mov    %rcx,<span class="o">(</span>%rax<span class="o">)</span>
+    1292:       48 83 85 e0 ef ff ff    addq   <span class="nv">$0x1</span>,-0x1020<span class="o">(</span>%rbp<span class="o">)</span>
+    1299:       01
+    129a:       48 81 bd e0 ef ff ff    cmpq   <span class="nv">$0xfffff</span>,-0x1020<span class="o">(</span>%rbp<span class="o">)</span>
+    12a1:       ff ff 0f 00
+    12a5:       76 c5                   jbe    126c &lt;main+0xa3&gt;
+    12a7:       b8 00 00 00 00          mov    <span class="nv">$0x0</span>,%eax
+    12ac:       48 8b 55 f8             mov    <span class="nt">-0x8</span><span class="o">(</span>%rbp<span class="o">)</span>,%rdx
+    12b0:       64 48 2b 14 25 28 00    sub    %fs:0x28,%rdx
+    12b7:       00 00
+    12b9:       74 05                   je     12c0 &lt;main+0xf7&gt;
+</code></pre></div></div>
+
+<h2 id="readcore">readcore</h2>
+
+<ul>
+  <li>いまやったようなことを手軽にやりたい</li>
+  <li><a href="https://github.com/akawashiro/readcore">https://github.com/akawashiro/readcore</a> を作っている</li>
+</ul>
+
+<h2 id="おまけ---誰が-コアダンプファイルを生成しているのか">おまけ - 誰が コアダンプファイルを生成しているのか?</h2>
+
+<ul>
+  <li>コアダンプファイルを生成しているのは Linux カーネル
+    <ul>
+      <li><a href="https://github.com/akawashiro/linux/blob/0457e5153e0e8420134f60921349099e907264ca/fs/binfmt_elf.c#L2162-L2169">fs/binfmt_elf.c</a></li>
+    </ul>
+  </li>
+  <li>クラッシュしたときはユーザ空間のプロセスは動けないので当然といえは当然</li>
+</ul>
+
+<h2 id="参考文献">参考文献</h2>
+
+<ul>
+  <li><a href="https://linuxjm.osdn.jp/html/LDP_man-pages/man5/core.5.html">man 5 core</a></li>
+  <li><a href="https://linuxjm.osdn.jp/html/LDP_man-pages/man7/signal.7.html">man 7 signal</a>
+    <ul>
+      <li>標準シグナル</li>
+    </ul>
+  </li>
+</ul>
+
+      </div>
+    </main><footer class="site-footer h-card">
+</footer>
+</body>
+
+</html>
