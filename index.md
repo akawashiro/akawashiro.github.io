@@ -131,4 +131,4 @@ layout: default
 
 ## My icon
 
-![atmega168](./atmega168.jpg "atmega168")
+- [atmega168](./atmega168.jpg)
