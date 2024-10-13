@@ -9,6 +9,10 @@ layout: default
 
 <img src="atmega168.jpg" width="20%">
 
+### Profile
+
+<img src="profile.png" width="20%">
+
 ## Interests
 
 - Executable and Linkable Format of Linux
