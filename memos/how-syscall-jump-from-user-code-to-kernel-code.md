@@ -5,6 +5,7 @@ layout: default
 
 # MSR_LSTAR レジスタ
 [arch/x86/kernel/cpu/common.c#L2029](https://github.com/akawashiro/linux/blob/0c3836482481200ead7b416ca80c68a29cfdaabd/arch/x86/kernel/cpu/common.c#L2029) で`MSR_LSTAR` というレジスタに `entry_SYSCALL_64` 関数のアドレスを登録すると、`syscall` 命令の実行時にこのアドレスにジャンプする。`MSR_LSTAR` がどういう作用を持つかは[Intel® 64 and IA-32 Architectures Software Developer's  Manual Volume 4: Model-specific Registers](https://cdrdv2.intel.com/v1/dl/getContent/671098)に記述がある。
+
 <img src="./IA32_LSTAR.png" width="50%">
 
 # 実際のコードの流れ

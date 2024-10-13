@@ -34,8 +34,9 @@
 <main class="page-content" aria-label="Content">
       <div class="wrapper">
         <h1 id="msr_lstar-レジスタ">MSR_LSTAR レジスタ</h1>
-<p><a href="https://github.com/akawashiro/linux/blob/0c3836482481200ead7b416ca80c68a29cfdaabd/arch/x86/kernel/cpu/common.c#L2029">arch/x86/kernel/cpu/common.c#L2029</a> で<code class="language-plaintext highlighter-rouge">MSR_LSTAR</code> というレジスタに <code class="language-plaintext highlighter-rouge">entry_SYSCALL_64</code> 関数のアドレスを登録すると、<code class="language-plaintext highlighter-rouge">syscall</code> 命令の実行時にこのアドレスにジャンプする。<code class="language-plaintext highlighter-rouge">MSR_LSTAR</code> がどういう作用を持つかは<a href="https://cdrdv2.intel.com/v1/dl/getContent/671098">Intel® 64 and IA-32 Architectures Software Developer’s  Manual Volume 4: Model-specific Registers</a>に記述がある。
-<img src="./IA32_LSTAR.png" width="50%" /></p>
+<p><a href="https://github.com/akawashiro/linux/blob/0c3836482481200ead7b416ca80c68a29cfdaabd/arch/x86/kernel/cpu/common.c#L2029">arch/x86/kernel/cpu/common.c#L2029</a> で<code class="language-plaintext highlighter-rouge">MSR_LSTAR</code> というレジスタに <code class="language-plaintext highlighter-rouge">entry_SYSCALL_64</code> 関数のアドレスを登録すると、<code class="language-plaintext highlighter-rouge">syscall</code> 命令の実行時にこのアドレスにジャンプする。<code class="language-plaintext highlighter-rouge">MSR_LSTAR</code> がどういう作用を持つかは<a href="https://cdrdv2.intel.com/v1/dl/getContent/671098">Intel® 64 and IA-32 Architectures Software Developer’s  Manual Volume 4: Model-specific Registers</a>に記述がある。</p>
+
+<p><img src="./IA32_LSTAR.png" width="50%" /></p>
 
 <h1 id="実際のコードの流れ">実際のコードの流れ</h1>
 <ol>
