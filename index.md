@@ -3,6 +3,12 @@ title: Akira Kawata
 layout: default
 ---
 
+## Photos
+
+### Icon
+
+<img src="atmega168.jpg" width="20%">
+
 ## Interests
 
 - Executable and Linkable Format of Linux
@@ -130,7 +136,3 @@ layout: default
 <iframe allowfullscreen sandbox="allow-top-navigation allow-scripts allow-popups allow-popups-to-escape-sandbox" width="600" height="400" src="https://mastofeed.com/apiv2/feed?userurl=https%3A%2F%2Fmstdn.jp%2Fusers%2Fa_kawashiro&theme=dark&size=100&header=true&replies=false&boosts=false"></iframe>
 
 [Link to the toot archive](./mastodon_archive.html)
-
-## My icon
-
-- [atmega168](./atmega168.jpg)
