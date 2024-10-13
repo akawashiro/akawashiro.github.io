@@ -6,7 +6,7 @@ $ ./run.sh
 # How to update contents
 
 1. Update `*.md` files
-1. Run `jeklly build`
+1. `./run.sh`
 1. Add all files under `_site` directory
 1. Push
 
