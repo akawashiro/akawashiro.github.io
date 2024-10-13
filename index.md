@@ -3,6 +3,8 @@ title: Akira Kawata
 layout: default
 ---
 
+# This site is moved to [https://akawashiro.com/](https://akawashiro.com/). Although you can check old contents here, please check [https://akawashiro.com/](https://akawashiro.com/) to get any updates.
+
 ## Photos
 
 ### Icon
