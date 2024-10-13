@@ -37,7 +37,7 @@ layout: default
 ## Articles
 
 - [MN-Coreランタイム – MN-Coreを動かすソフトウェア (in Japanese)](https://tech.preferred.jp/ja/blog/mncore-runtime-1/) / [MN-Core runtime – software which runs MN-Core](https://tech.preferred.jp/en/blog/mncore-runtime-1/)
-- [ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム (in Japanese)](./articles/ros3fs-jp)
+- [ros3fs - オブジェクトストレージ用の高速な読み取り専用FUSEファイルシステム (in Japanese)](./articles/ros3fs-jp.html)
 - [Linux のローダを自作する (in Japanese)](https://zenn.dev/a_kawashiro/articles/506a224d206418) / [Alternative Linux loader (in English)](https://akawashiro.com/articles/sloader-succeeded-self-build-en)
 - [Linux におけるデバイスファイルの仕組み (in Japanese)](https://zenn.dev/a_kawashiro/articles/387fa97163dd66) / [How device file in Linux works (in English)](./articles/how-device-file-in-linux-works)
 - [jendeley - JSON ベースの文書管理ソフトウェア (in Japanese)](https://zenn.dev/a_kawashiro/articles/a2170f967f9508) / [jendeley - a JSON-based document organizing software (in English)](https://akawashiro.github.io/jendeley/)
@@ -140,3 +140,6 @@ layout: default
 <iframe allowfullscreen sandbox="allow-top-navigation allow-scripts allow-popups allow-popups-to-escape-sandbox" width="600" height="400" src="https://mastofeed.com/apiv2/feed?userurl=https%3A%2F%2Fmstdn.jp%2Fusers%2Fa_kawashiro&theme=dark&size=100&header=true&replies=false&boosts=false"></iframe>
 
 [Link to the toot archive](./mastodon_archive.html)
+
+## Memos
+- [How to deploy this site](./memos/how-to-deploy-this-site.html)
