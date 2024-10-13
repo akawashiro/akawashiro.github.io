@@ -9,6 +9,10 @@ layout: default
 
 <img src="atmega168.jpg" width="20%">
 
+### Profile
+
+<img src="profile.png" width="20%">
+
 ## Interests
 
 - Executable and Linkable Format of Linux
@@ -47,7 +51,7 @@ layout: default
 ## Publication
 
 - [Binary Hacks Rebooted ~ Forkwell Library#68](https://forkwell.connpass.com/event/331098/)
-  - [『Binary Hacks Rebooted』の紹介](https://akawashiro.github.io/BinaryHacksRebootedIntroduction20241003.pdf)
+  - [『Binary Hacks Rebooted』の紹介](./BinaryHacksRebootedIntroduction20241003.pdf)
 - [夏のプログラミング・シンポジウム 2024](https://prosym.org/sprosym2024/)
   - [実行ファイルのスペースにホワイトスペースを入れる](https://docs.google.com/presentation/d/1dNYOtYc7xz1GSW5NwhiZ6KXhbJnpGBLBZW5lhI8shcw/edit#slide=id.g2ff84a965c3_0_119)
 - [Kernel/VM 探検隊@東京 No16](https://kernelvm.connpass.com/event/287261/)
