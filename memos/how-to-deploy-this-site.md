@@ -1,3 +1,8 @@
+---
+title: How to deploy this site
+layout: default
+---
+
 # How to check the result
 ```sh
 $ ./run.sh
