@@ -8,7 +8,7 @@ if [ -n "${EXITING_CONTAINER_ID}" ]; then
   podman stop ${EXITING_CONTAINER_ID}
   podman rm ${EXITING_CONTAINER_ID}
 fi
-podman pull docker.io/library/nginx:latest
 podman image build --network host . -t ${IMAGE_NAME}
 podman run --publish 8080:80/tcp -d --name ${CONTAINER_NAME} ${IMAGE_NAME}
+podman cp ${CONTAINER_NAME}:/var/www/html/. _site
 echo "Access to http://localhost:8080/"
