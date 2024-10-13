@@ -1,5 +1,4 @@
-FROM ubuntu:24.04 as builder
-
+FROM ubuntu:24.04
 RUN apt update
 RUN apt-get install -y \
     git \
@@ -14,7 +13,7 @@ WORKDIR /akawashiro.github.io
 RUN bundle update
 RUN bundle install
 RUN bundle exec jekyll build
-
-FROM nginx:latest
-COPY --from=builder /akawashiro.github.io/_site /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/nginx.conf
+RUN cp -a /akawashiro.github.io/_site/. /var/www/html
+RUN rm /var/www/html/index.nginx-debian.html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
